@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.11.1.2">
+<procedure name="main">
+<interface/>
+<body>
+<c>* File name: hand eye calibration.hdev</c>
+<c>* Description: Perform hand-eye calibration using 2D images and robot poses in an Eye-in-Hand setup</c>
+<c></c>
+<c>* ===== Configuration Section =====</c>
+<c>* Disable automatic window updates to improve performance during processing</c>
+<l>dev_update_off ()</l>
+<c>* Prefix file path (dir) for calibration images</c>
+<l>CalibrationImagePath := './calibration_img/'</l>
+<c>* File name of the calibration image (.png)</c>
+<l>CalibrationName := 'img'</l>
+<c>* Prefix flie path (dir) for robot pose data</c>
+<l>PoseDataPath := './pose_dat/'</l>
+<c>* File name of the robot pose data (.dat)</c>
+<l>PoseDataName := 'flange_pose'</l>
+<c></c>
+<c>* Prefix file path (dir) for calibration results</c>
+<l>CalibrationResultPath := './calibration_result/'</l>
+<c>* File name of the calibration result</c>
+<l>CalibrationResultName := 'flange_in_ToF_cam_SN24945819'</l>
+<c>* Total number of image-pose pairs to use</c>
+<l>Num_pair := 21</l>
+<c>* Calibration plate model file</c>
+<l>CalTabFile := './calibration_plate_description/calplateHG0608_2.cpd'</l>
+<c>* Load camera intrinsic parameters from file</c>
+<l>read_cam_par ('./calibration_result/ToF_cam_intrinsic_cal_SN24945819.dat', CameraParam)</l>
+<c></c>
+<c></c>
+<c>* ===== Check the first image for image's width and height =====</c>
+<c>* Load the first image</c>
+<l>read_image (Image, CalibrationImagePath + 'img' + '00')</l>
+<c>* Get the image resolution (Width x Height)</c>
+<l>get_image_size (Image, Width, Height)</l>
+<c></c>
+<c></c>
+<c>* ===== Open a window for displaying images =====</c>
+<c>* Open a display window with black background</c>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle)</l>
+<c>* Set line width for drawing</c>
+<l>dev_set_line_width (2)</l>
+<c>* Set drawing mode to show object boundaries</c>
+<l>dev_set_draw ('margin')</l>
+<c>* Set font style and size for on-screen messages</c>
+<l>set_display_font (WindowHandle, 14, 'mono', 'true', 'false')</l>
+<c></c>
+<c></c>
+<c>* ===== (Optional) Create 3D Arrow Models for Visualization =====</c>
+<c>* Define 3D arrows representing robot tool and base for visualization</c>
+<l>ArrowThickness := 0.005</l>
+<l>ArrowLength := 0.05</l>
+<l>gen_robot_tool_and_base_object_model_3d (ArrowThickness, ArrowLength, OM3DToolOrigin, OM3DBase)</l>
+<c></c>
+<c></c>
+<c>* ===== Initializae hand-eye calibration data (moving camera) =====</c>
+<c>* Create a calibration model for eye-in-hand with a moving camera setup</c>
+<l>create_calib_data ('hand_eye_moving_cam', 1, 1, CalibDataID)</l>
+<c>* Assign the camera parameters to the calibration model</c>
+<l>set_calib_data_cam_param (CalibDataID, 0, [], CameraParam)</l>
+<c>* Register the calibration plate description to the calibration model</c>
+<l>set_calib_data_calib_object (CalibDataID, 0, CalTabFile)</l>
+<c>* Set optimization method to nonlinear for calibration accuracy</c>
+<l>set_calib_data (CalibDataID, 'model', 'general', 'optimization_method', 'nonlinear')</l>
+<c></c>
+<c></c>
+<c>* ===== Main Loop: Process each calibration Images =====</c>
+<l>for I := 0 to Num_pair - 1 by 1</l>
+<l>    dev_set_window (WindowHandle)</l>
+<l>    dev_clear_window ()</l>
+<l>    read_image (Image, CalibrationImagePath + CalibrationName + I$'02d')</l>
+<l>    dev_display (Image)</l>
+<c>    </c>
+<c>    </c>
+<c>    * ===== Try to detect the calibration object =====</c>
+<l>    try</l>
+<c>        * Detect the calibration object in this image</c>
+<l>        find_calib_object (Image, CalibDataID, 0, 0, I, [], [])</l>
+<l>    catch (Exception)</l>
+<l>        disp_message(WindowHandle, 'ERROR: Cannot find calibration object in image ' + I$'02d', 'window', 12, 12, 'red', 'true')</l>
+<l>        stop()</l>
+<l>    endtry</l>
+<c>    * Retrieve the contours of the calibration plate detected in this image (for visualization)</c>
+<l>    get_calib_data_observ_contours (Caltab, CalibDataID, 'caltab', 0, 0, I)</l>
+<c>    * Retrieve the 2D corner points detected from the calibration plate in this image</c>
+<c>    * and the estimated pose of the calibration object in the camera  frame</c>
+<l>    get_calib_data_observ_points (CalibDataID, 0, 0, I, RCoord, CCoord, Index, PoseForCalibrationPlate)</l>
+<c></c>
+<c>    </c>
+<c>    * ===== Visualize detection results =====</c>
+<l>    dev_display (Image)</l>
+<c>    * Draw the detected calibration object contours in green color</c>
+<l>    dev_set_color ('green')</l>
+<l>    dev_display (Caltab)</l>
+<c>    * Draw the detected calibration points (cross marks) at (RCoord, CCoord) in yellow color</c>
+<l>    dev_set_color ('yellow')</l>
+<l>    disp_cross (WindowHandle, RCoord, CCoord, 6, 0)</l>
+<c>    * Draw the 3D coordinate axes of the calibration plate using the estimated pose</c>
+<l>    dev_set_colored (3)</l>
+<l>    disp_3d_coord_system (WindowHandle, CameraParam, PoseForCalibrationPlate, 0.01)</l>
+<c>    * Show the message indicating progress</c>
+<l>    disp_message (WindowHandle, 'Extracting data from calibration image ' + (I + 1) + ' of ' + Num_pair, 'window', 12, 12, 'black', 'true')</l>
+<c>    </c>
+<c>    * ===== Load robot Flange-to-Base pose for this image into calibration model =====</c>
+<c>    * Load the pose of robot's flange</c>
+<l>    read_pose (PoseDataPath + PoseDataName + I$'02d' + '.dat', ToolInBasePose)</l>
+<c>    * Transform the 3D model of the tool coordinate frame to match this pose (for visualization)</c>
+<l>    rigid_trans_object_model_3d (OM3DToolOrigin, ToolInBasePose, OM3DTool)</l>
+<c>    * Store this pose into the calibration model as the tool pose for this image</c>
+<l>    set_calib_data (CalibDataID, 'tool', I, 'tool_in_base_pose', ToolInBasePose)</l>
+<l>    stop()</l>
+<l>endfor</l>
+<c></c>
+<c></c>
+<c>* ===== Open a window for displaying result =====</c>
+<c>* Open a display window with black background</c>
+<l>dev_open_window (0, 650, Width, Height, 'black', WindowHandle_Result)</l>
+<c>* Set font style and size for on-screen messages</c>
+<l>set_display_font (WindowHandle_Result, 14, 'mono', 'true', 'false')</l>
+<c>* Set the current active window to the result window</c>
+<l>dev_set_window (WindowHandle_Result)</l>
+<c></c>
+<c></c>
+<c>* ===== Calibration execution =====</c>
+<c>* Validate calibration input poses</c>
+<l>check_hand_eye_calibration_input_poses (CalibDataID, 0.05, 0.005, Warnings)</l>
+<c>* If any warnings exists, show them in the variable inspector</c>
+<l>if (|Warnings| != 0)</l>
+<l>    dev_inspect_ctrl (Warnings)</l>
+<l>endif</l>
+<c>* Perform hand-eye calibration</c>
+<l>calibrate_hand_eye (CalibDataID, Errors)</l>
+<c></c>
+<c></c>
+<c>* ===== Retrieve calibration results =====</c>
+<c>* Get the overall camera calibration error</c>
+<l>get_calib_data (CalibDataID, 'model', 'general', 'camera_calib_error', CamCalibError)</l>
+<c>* Get the intrinsic camera parameters after calibration</c>
+<l>get_calib_data (CalibDataID, 'camera', 0, 'params', CamParam)</l>
+<c>* Get the 6D pose of the calibration object (Calibration plate) in the robot's base frame</c>
+<l>get_calib_data (CalibDataID, 'calib_obj', 0, 'obj_in_base_pose', CalObjInBasePose)</l>
+<c>* Get the final result of hand-eye calibration:</c>
+<c>* the 6D pose of the robot tool in the camera coordinate system</c>
+<l>get_calib_data (CalibDataID, 'camera', 0, 'tool_in_cam_pose', ToolInCamPose)</l>
+<c>* Display results of calibration</c>
+<l>disp_results (WindowHandle_Result, CamCalibError, Errors)</l>
+<c></c>
+<c></c>
+<c>* ===== Save calibration results to files =====</c>
+<c>* Save flange-in-camera pose (eye-in-hand result)</c>
+<l>write_pose (ToolInCamPose, CalibrationResultPath + CalibrationResultName + '.dat')</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="calc_calplate_pose_movingcam">
+<interface>
+<ic>
+<par name="CalibObjInBasePose" base_type="ctrl" dimension="0"/>
+<par name="ToolInCamPose" base_type="ctrl" dimension="0"/>
+<par name="ToolInBasePose" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="CalibObjInCamPose" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>* CalibObjInCamPose = cam_H_calplate</c>
+<c>*                   = cam_H_tool * tool_H_base * base_H_calplate</c>
+<c>*                   = ToolInCamPose * BaseInToolPose * CalibrationPose</c>
+<l>pose_invert (ToolInBasePose, BaseInToolPose)</l>
+<l>pose_compose (ToolInCamPose, BaseInToolPose, BaseInCamPose)</l>
+<l>pose_compose (BaseInCamPose, CalibObjInBasePose, CalibObjInCamPose)</l>
+<l>return ()</l>
+</body>
+<docu id="calc_calplate_pose_movingcam">
+<short lang="en_US">compute cam_H_calplate from hand-eye calibration results</short>
+<parameters>
+<parameter id="CalibObjInBasePose"/>
+<parameter id="CalibObjInCamPose"/>
+<parameter id="ToolInBasePose"/>
+<parameter id="ToolInCamPose"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="disp_results">
+<interface>
+<ic>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+<par name="CamCalibError" base_type="ctrl" dimension="0"/>
+<par name="Errors" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>dev_clear_window ()</l>
+<l>Message := 'Quality of the results:'</l>
+<l>disp_message (WindowHandle, Message, 'window', 12, 12, 'black', 'true')</l>
+<l>Message := 'Error of the camera calibration:      ' + CamCalibError$'6.4f' + ' pixel'</l>
+<l>disp_message (WindowHandle, Message, 'window', 52, 12, 'black', 'true')</l>
+<l>Message := 'Errors of the hand eye calibration:'</l>
+<l>disp_message (WindowHandle, Message, 'window', 92, 12, 'black', 'true')</l>
+<l>DispErrors := []</l>
+<l>DispErrors := [DispErrors,'                     |   RMS    |  Maximum |']</l>
+<l>DispErrors := [DispErrors,'|--------------------+----------+----------|']</l>
+<l>DispErrors := [DispErrors,'| Translational part | ' + (Errors[0] * 1e3)$'5.3f' + ' mm | ' + (Errors[2] * 1e3)$'5.3f' + ' mm |']</l>
+<l>DispErrors := [DispErrors,'| Rotational part    | ' + Errors[1]$'5.3f' + ' °  | ' + Errors[3]$'5.3f' + ' °  |']</l>
+<l>disp_message (WindowHandle, DispErrors, 'window', 132, 40, 'black', 'true')</l>
+<l>return ()</l>
+</body>
+<docu id="disp_results">
+<parameters>
+<parameter id="CamCalibError"/>
+<parameter id="Errors"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

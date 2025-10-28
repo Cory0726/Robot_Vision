@@ -1,0 +1,12 @@
+#
+# 3D POSE PARAMETERS: rotation and translation
+#
+
+# Used representation type:
+f 2
+
+# Rotation angles [deg] or Rodriguez-vector:
+r 177.50735473632812 1.4591774940490723 -82.02900695800781
+
+# Translational vector (x y z [m]):
+t 0.0560821418762207 0.6213069458007813 0.36067279052734375
