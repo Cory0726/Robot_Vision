@@ -28,6 +28,7 @@ def main():
             # Get the depth image
             depth_image = lab_basler_library.get_depth_image(point_cloud_data)
             # Display
+
             cv2.imshow("Depth image", depth_image)
             
             grab_retrieve.Release()
