@@ -2,6 +2,7 @@ import numpy as np
 from pypylon import pylon
 import cv2
 import lab_basler_library
+import convert_tof_point_cloud_to_rgb
 
 def grab_one_rgb_img():
     # Init rgb camera
@@ -18,7 +19,7 @@ def grab_one_rgb_img():
     rgb_cam.Close()
     return rgb_image
 
-def grab_one_depth(data_type: str):
+def grab_one_point_cloud(data_type: str):
     # Init tof camera
     tof_cam_sn = "24945819"
     tof_cam = lab_basler_library.create_basler_camera(tof_cam_sn)
@@ -29,18 +30,26 @@ def grab_one_depth(data_type: str):
     grab_result = tof_cam.GrabOne(1000)  # timeout: 1s
     assert grab_result.GrabSucceeded(), "Failed to grab depth data"
     point_cloud = lab_basler_library.split_container_data((grab_result.GetDataContainer()))["Point_Cloud"]
-    z_data = point_cloud[:,:,2]
-    # Data process
-    if data_type == "raw_depth":
-        return z_data
-    elif data_type == "depth_img":
-        gray_img = (z_data / tof_cam.DepthMax.Value * 255.0).astype(np.uint8)
-        heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
-        # heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_JET)
-        return heatmap
+    if data_type == "pcl":
+        return point_cloud  # Unit: mm
+    else:
+        z_data = point_cloud[:, :, 2]  # Get z data from point cloud
+        if data_type == "raw_depth":
+            return z_data
+        elif data_type == "depth_img":
+            gray_img = (z_data / tof_cam.DepthMax.Value * 255.0).astype(np.uint8)
+            heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
+            # heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_JET)
+            return heatmap
+        else:
+            return None
 
 if __name__ == "__main__":
-    img = grab_one_depth("depth_img")
-    cv2.imshow("Depth image", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    pcl = grab_one_point_cloud("pcl") / 1000
+    pts_tof = pcl.reshape((-1, 3))
+    T_tof2rgb = convert_tof_point_cloud_to_rgb.T_point2rgbframe()
+    pts_rgb = convert_tof_point_cloud_to_rgb.transform_points(T_tof2rgb, pts_tof)
+    print("success")
+    # cv2.imshow("Depth image", depth_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
