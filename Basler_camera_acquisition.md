@@ -19,7 +19,8 @@
 ## Basler SDK:
 ### [The pylon Software Suite](https://www.baslerweb.com/en/software/pylon-software-suite/)
 - Version : [Basler pylon 8.0.2](https://www.baslerweb.com/zh-tw/downloads/software/1378313866/?downloadCategory.values.label.data=pylon+Supplementary+Package&downloadCategory.values.label.data=pylon)
-- Including software : 
+- Including software :
+
   | pylon Viewer | pylon IP Configurator |
   | :--: | :--: |
   | Camera view for 2D camera | Configurate the camera IP | 
@@ -35,4 +36,8 @@ Specially of blaze series camera (3D camera)
 - Basler's Python package(Python API) **pypylon** is essntially a wrapper around the original Python C++ API, C# API.
 - [pypylon github](https://github.com/basler/pypylon/tree/master)
 - [Basler Pylon API document](https://zh.docs.baslerweb.com/pylonapi/index)
-- Sample code : `C:\Program Files\Basler\pylon 8\Development\Samples`
+- Sample code :  
+  - `C:\Program Files\Basler\pylon 8\Development\Samples\blaze\Python\pypylon`
+  - [Device Enumeration and Device Configuration](https://github.com/basler/pypylon-samples/blob/main/notebooks/basic-examples/deviceenumeration_and_configuration.ipynb)
+  - [Multi-camera handling](https://github.com/basler/pypylon-samples/blob/main/notebooks/basic-examples/multicamera_handling.ipynb)
+  - [Grab Strategies](https://github.com/basler/pypylon-samples/blob/main/notebooks/basic-examples/grabstrategies.ipynb)

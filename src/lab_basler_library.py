@@ -50,7 +50,7 @@ def config_data_component_type(camera: pylon.InstantCamera, data_type: str) -> N
         # Close 3d point cloud image
         camera.GetNodeMap().GetNode("ComponentSelector").SetValue("Range")
         camera.GetNodeMap().GetNode("ComponentEnable").SetValue(False)
-        camera.GetNodeMap().GetNode("PixelFormat").SetValue("Coord3D_ABC32f")
+        camera.GetNodeMap().GetNode("PixelFormat").SetValue("Coord3D_ABC32f")  # Coord3D_C16 / Coord3D_ABC32f
         # Open intensity image
         camera.GetNodeMap().GetNode("ComponentSelector").SetValue("Intensity")
         camera.GetNodeMap().GetNode("ComponentEnable").SetValue(True)
@@ -99,33 +99,28 @@ def config_tof_camera_para(camera: pylon.InstantCamera) -> None:
         camera (pylon.InstantCamera): A ToF camera instance
     """
     print("ToF camera information:")
-    # Operating mode
-    # ShortRange: 0 - 1498 mm
-    # LongRange: 0 - 9990 mm
+    # Operating mode: ShortRange: 0 - 1498 mm / LongRange: 0 - 9990 mm
     camera.OperatingMode.Value = "ShortRange"
-    print(f"Operating mode: {camera.OperatingMode.Value}")
+    # Max depth / Min depth (mm)
+    camera.DepthMax.Value = 1498
+    camera.DepthMin.Value = 0
+    print(f"Operating mode: {camera.OperatingMode.Value} / Depth max: {camera.DepthMax.Value} / min: {camera.DepthMin.Value}")
     # Fast mode
     camera.FastMode.Value = True
     # Filter spatial
     camera.FilterSpatial.Value = True
     # Filter temporal
-    camera.FilterTemporal.Value = False
+    camera.FilterTemporal.Value = True
     # Filter temporal strength
     if camera.FilterTemporal.Value:
         camera.FilterStrength.Value = 200
     # Outlier removal
     camera.OutlierRemoval.Value = True
     # Confidence Threshold (0 - 65536)
-    camera.ConfidenceThreshold.Value = 304
+    camera.ConfidenceThreshold.Value = 32
     print(f"Confidence threshold: {camera.ConfidenceThreshold.Value}")
     # Gamma correction
     camera.GammaCorrection.Value = True
-    # Max depth (mm)
-    camera.DepthMax.Value = 1400
-    print(f"Depth max: {camera.DepthMax.Value}")
-    # Mim depth (mm)
-    camera.DepthMin.Value = 100
-    print(f"Depth min: {camera.DepthMin.Value}")    
     # GenDC (Generic Data Container) is used to transmit multiple types of image data,such as depth,
     # intensity, and confidence, in a single, structured data stream, making it
     # ideal for 3D and multi-modal imaging applications.
