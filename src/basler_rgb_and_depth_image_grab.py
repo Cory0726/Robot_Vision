@@ -58,14 +58,13 @@ if __name__ == "__main__":
 
 
 
-    # raw_depth = grab_one_point_cloud("raw_depth")  # unit: mm
-    # raw_depth = np.clip(raw_depth, 0, 65535)
-    # cv2.imwrite("depth_raw.png", raw_depth.astype(np.uint16))
+    rgb_img = grab_one_rgb_img()  # unit: mm
+    cv2.imwrite("rgb_img.png", rgb_img)
     # check = cv2.imread("depth_raw.png", cv2.IMREAD_UNCHANGED)
-    check = cv2.imread("depth_raw_undistorted.png", cv2.IMREAD_UNCHANGED)
-    print(check.dtype, check.max(), check.min())
-    gray_img = (check / check.max() * 255.0).astype(np.uint8)
-    heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
-    cv2.imshow("Depth image", heatmap)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # check = cv2.imread("depth_raw_undistorted.png", cv2.IMREAD_UNCHANGED)
+    # print(check.dtype, check.max(), check.min())
+    # gray_img = (check / check.max() * 255.0).astype(np.uint8)
+    # heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
+    # cv2.imshow("Depth image", heatmap)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
