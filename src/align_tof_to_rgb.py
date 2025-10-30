@@ -100,14 +100,18 @@ def project_tof_depth_to_rgb(depth_m_undist,
 
     # z-buffer splat: keep nearest Z per RGB pixel
     depth_rgb = np.zeros((Hrgb, Wrgb), dtype=np.float32)
-    far = np.full((Hrgb, Wrgb), np.inf, dtype=np.float32)
+    nearZ = np.full((Hrgb, Wrgb), np.inf, dtype=np.float32)
     lin = v_i * Wrgb + u_i
     # for same pixel, keep min Z
-    np.minimum.at(far, (v_i, u_i), Z)
+    np.minimum.at(nearZ, (v_i, u_i), Z)
     # fill where we saw anything
-    hit = np.isfinite(far)
-    depth_rgb[hit] = far[hit]
-    return depth_rgb
+    hit = np.isfinite(nearZ)
+    depth_rgb[hit] = nearZ[hit]
+    # Valid mask
+    valid_mask = np.zeros((Hrgb, Wrgb), dtype=np.uint8)
+    valid_mask[hit] = 255
+    return depth_rgb, valid_mask
+
 
 
 # ---------------------------
@@ -130,14 +134,14 @@ def fuse_rgb_and_tof_depth(rgb_bgr, depth_tof_m):
 
     # 4) project ToF depth onto RGB canvas
     Hrgb, Wrgb = rgb_undist.shape[:2]
-    depth_on_rgb_m = project_tof_depth_to_rgb(depth_undist, K_tof, K_rgb, T_rgb_from_tof,
+    depth_on_rgb_m, valid_mask = project_tof_depth_to_rgb(depth_undist, K_tof, K_rgb, T_rgb_from_tof,
                                               out_size=(Wrgb, Hrgb))
 
     # 5) stack B,G,R,Depth(m). Empty places remain zero by construction.
     depth_on_rgb_m = depth_on_rgb_m.astype(np.float32)  # meters
     rgbd = np.dstack([rgb_undist.astype(np.uint8), depth_on_rgb_m])
 
-    return rgbd, depth_on_rgb_m, rgb_undist
+    return rgbd, depth_on_rgb_m, rgb_undist, valid_mask
 
 
 # ---------------------------
@@ -145,18 +149,31 @@ def fuse_rgb_and_tof_depth(rgb_bgr, depth_tof_m):
 # ---------------------------
 if __name__ == "__main__":
     # Load your images (examples)
-    rgb = cv2.imread("rgb.png", cv2.IMREAD_COLOR)           # 1280x1024x3
-    depth = cv2.imread("tof_depth.exr", cv2.IMREAD_UNCHANGED)  # float meters (recommended)
+    rgb = cv2.imread("rgb_img.png", cv2.IMREAD_COLOR)           # 1280x1024x3
+    depth = cv2.imread("depth_raw.png", cv2.IMREAD_UNCHANGED)  # float meters (recommended)
     # If your depth is uint16 in millimeters, convert first:
     if depth.dtype == np.uint16:
         depth = depth.astype(np.float32) / 1000.0
 
-    rgbd, depth_aligned_m, rgb_undist = fuse_rgb_and_tof_depth(rgb, depth)
+    rgbd, depth_aligned_m, rgb_undist, valid_mask = fuse_rgb_and_tof_depth(rgb, depth)
 
     # Save: RGBD as two files (RGB PNG + depth PNG in mm for inspection)
     cv2.imwrite("rgb_undist.png", rgb_undist)
     depth_mm = np.clip(depth_aligned_m * 1000.0, 0, 65535).astype(np.uint16)
-    cv2.imwrite("depth_on_rgb_mm.png", depth_mm)
+    cv2.imwrite("depth_on_rgb_mm.png", depth_mm)  # 16-bit PNG (mm)
+    cv2.imwrite("depth_valid_mask.png", valid_mask)  # 0/255 mask
+
+    check = cv2.imread("depth_on_rgb_mm.png", cv2.IMREAD_UNCHANGED)
+    print(check.shape, check.dtype, check.max(), check.min())
+    gray_img = (check / check.max() * 255.0).astype(np.uint8)
+    heatmap = cv2.applyColorMap(gray_img, cv2.COLORMAP_JET)
+    cv2.imwrite("depth_on_rgb_mm_heatmap.png", heatmap)
+
+    vis = cv2.normalize(depth_aligned_m, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    vis[valid_mask == 0] = 0
+    vis = cv2.applyColorMap(vis, cv2.COLORMAP_JET)
+    cv2.imwrite("depth_on_rgb_heatmap_with_mask.png", vis)
+
 
     # (Optionally) save a 4-ch .npy tensor
     np.save("rgbd_4ch.npy", rgbd)  # shape: (1024,1280,4)  [B,G,R,Depth(m)]
