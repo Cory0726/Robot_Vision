@@ -40,7 +40,9 @@ HALCON HDevelop : `File > Browse HDevelop Example Programs > (Category) Applicat
     - Description File: `.\src\calibration_plate_description\calplateHG0608_2.cpd`
     - Thickness: *10 mm*
 - Camera Parameters:
-    - Camera Model: *Area Scan (Polynomial),* **do not** `Import Parametes …`
+    - Camera Model: 
+      - *Area Scan (Polynomial),* **do not** `Import Parametes …`
+      - Don't check `Tilt`
     - Projection Model : *Projective*
 
 ### Calibration
