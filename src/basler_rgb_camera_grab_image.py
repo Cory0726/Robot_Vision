@@ -30,6 +30,8 @@ def main():
             # Break the loop by pressing q
             if key == ord("q"):
                 break
+            elif key == ord("s"):
+                cv2.imwrite("rgb_test_image.jpg", rgb_image)
         
             grab_retrieve.Release()
     camera.StopGrabbing()

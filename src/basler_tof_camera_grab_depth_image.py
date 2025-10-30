@@ -38,7 +38,7 @@ def main():
         # Break the loop by pressing q
         if key == ord("q"):
             break
-            
+
     camera.StopGrabbing()
     camera.Close()
     
