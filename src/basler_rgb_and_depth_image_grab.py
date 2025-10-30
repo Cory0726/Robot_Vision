@@ -45,11 +45,17 @@ def grab_one_point_cloud(data_type: str):
             return None
 
 if __name__ == "__main__":
-    pcl = grab_one_point_cloud("pcl") / 1000
-    pts_tof = pcl.reshape((-1, 3))
-    T_tof2rgb = convert_tof_point_cloud_to_rgb.T_point2rgbframe()
-    pts_rgb = convert_tof_point_cloud_to_rgb.transform_points(T_tof2rgb, pts_tof)
-    print("success")
-    # cv2.imshow("Depth image", depth_img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    # pcl = grab_one_point_cloud("pcl") / 1000
+    # pts_tof = pcl.reshape((-1, 3))
+    # T_tof2rgb = convert_tof_point_cloud_to_rgb.T_point2rgbframe()
+    # pts_rgb = convert_tof_point_cloud_to_rgb.transform_points(T_tof2rgb, pts_tof)
+    # pcl_rgb = pts_rgb.reshape(480, 640, 3)
+    #
+    # pcl_rgb_z_max = pcl_rgb.max()
+    # print(pcl_rgb_z_max)
+    # gray_img = (pcl_rgb[:, :, 2] / pcl_rgb_z_max * 255.0).astype(np.uint8)
+    # heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
+    heatmap = grab_one_point_cloud("depth_img")
+    cv2.imshow("Depth image", heatmap)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
