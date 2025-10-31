@@ -1,7 +1,9 @@
+import os
 from pypylon import pylon
 import cv2
 import basler_cam_init
 import numpy as np
+from pathlib import Path
 
 def create_rgb_cam_obj():
     """
@@ -64,7 +66,13 @@ def stream_rgb_img() -> None:
                 break
             # Save the image by pressing s
             elif key == ord("s"):
-                cv2.imwrite("rbg_img_by_stream.png", rgb_img)
+                file_number = 0
+                file_path = f"rbg_img_by_stream_{file_number:02d}.png"
+                while os.path.exists(file_path):
+                    file_number += 1
+                    file_path = f"calibration_img/{file_number:02d}.png"
+                cv2.imwrite(file_path, rgb_img)
+                print(f"Saved: {file_path}")
         
             grab_retrieve.Release()
     cam.StopGrabbing()
@@ -92,7 +100,7 @@ def halcon_to_opencv_intrinsics(
     f_mm=7.09725,                         # focal length [mm]
     Cx_px=635.69, Cy_px=535.704,          # principal point [pixels]
     K1=5067.98, K2=8.93518e6, K3=-6.00845e10,  # radial distortion [1/m^2, 1/m^4, 1/m^6]
-    P1=-0.128108, P2=0.130449,                 # tangential distortion [1/m]
+    P1=-0.128108, P2=0.130449,                 # tangential distortion [1/m^2]
 ):
     """
     Convert HALCON-style camera parameters into OpenCV-style intrinsic matrix and distortion coefficients.
@@ -126,54 +134,50 @@ def halcon_to_opencv_intrinsics(
     dist = np.array([k1, k2, p1, p2, k3], dtype=np.float64)
     return K, dist
 
-def undistort_rgb_image(
-    img_path,
-    out_path=None
-):
+def undistort_rgb_image(img, alpha=1.0):
     """
-    Read an RGB image, apply lens undistortion using OpenCV, and save the corrected image.
+    Apply lens undistortion to an RGB image (OpenCV array) and return the corrected image and new camera matrix.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input RGB image (e.g., loaded via cv2.imread or from camera stream).
+    alpha : float, optional
+        Trade-off between cropping and field of view in cv2.getOptimalNewCameraMatrix.
+        - alpha = 0 : no black borders, tighter crop.
+        - alpha = 1 : keep full FOV, possible black borders.
+
+    Returns
+    -------
+    undistorted_img : np.ndarray
+        The undistorted RGB image.
+    newK : np.ndarray
+        The new optimal camera matrix.
     """
 
     # Build OpenCV intrinsics and distortion coefficients
     K, dist = halcon_to_opencv_intrinsics()
 
-    # Load image
-    img = cv2.imread(str(img_path), cv2.IMREAD_UNCHANGED)
-    if img is None:
-        raise FileNotFoundError(f"Cannot read image: {img_path}")
+    if img is None or not isinstance(img, np.ndarray):
+        raise ValueError("Input must be a valid image (numpy array).")
     h, w = img.shape[:2]
 
     # Compute new optimal camera matrix (alpha controls cropping)
-    # The parameter 'alpha' controls the trade-off between cropping and keeping the full field of view:
-    # - alpha = 0 : All black borders are removed (cropped image, smaller FOV)
-    # - alpha = 1 : Keep all pixels, including black borders (larger FOV)
-    # - Intermediate values (0 < alpha < 1) balance between the two.
-    newK, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), alpha=1)
+    newK, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), alpha=alpha)
 
     # Undistort image
     map1, map2 = cv2.initUndistortRectifyMap(K, dist, R=None, newCameraMatrix=newK,
                                             size=(w, h), m1type=cv2.CV_32FC1)
-    undist = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR)
+    undist_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR)
 
     # Alternatively, use remapping for faster processing:
-    # undist = cv2.undistort(img, K, dist, None, newK)
+    # undist_img = cv2.undistort(img, K, dist, None, newK)
 
     # Crop the image based on ROI (optional)
     # x, y, rw, rh = roi
     # if rw > 0 and rh > 0:
-    #     undist = undist[y:y+rh, x:x+rw]
+    #     undist_img = undist_img[y:y+rh, x:x+rw]
 
-    # Save the undistorted image
-    if out_path is None:
-        out_path = Path(img_path).with_name(Path(img_path).stem + "_undistorted.png")
-    cv2.imwrite(str(out_path), undist)
 
     # Return useful info for debugging
-    return {
-        "cameraMatrix": K,
-        "distCoeffs": dist,
-        "newCameraMatrix": newK,
-        "roi": roi,
-        "out_path": str(out_path),
-        "undistortedImg": undist
-    }
+    return undist_img, newK
