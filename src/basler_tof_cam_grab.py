@@ -126,7 +126,7 @@ def pcl_to_rawdepth(pcl):
     return pcl[:,:,2]  # Get z data from point cloud
 
 def rawdepth_to_heatmap(rawdepth):
-    gray_img = cv2.normalize(rawdepth, None, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    gray_img = cv2.normalize(rawdepth, None, 0,255, cv2.NORM_MINMAX).astype(np.uint8)
     heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
     # heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_JET)
     return heatmap
