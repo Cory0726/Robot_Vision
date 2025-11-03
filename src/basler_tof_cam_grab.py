@@ -1,5 +1,6 @@
 import os
 import cv2
+import numpy as np
 from pypylon import pylon
 import basler_cam_init
 
@@ -121,6 +122,15 @@ def split_tof_container_data(container) -> dict:
         data_component.Release()
     return data_dict
 
+def pcl_to_rawdepth(pcl):
+    return pcl[:,:,2]  # Get z data from point cloud
+
+def rawdepth_to_heatmap(rawdepth):
+    gray_img = cv2.normalize(rawdepth, None, 255, cv2.NORM_MINMAX)
+    heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_TURBO)
+    # heatmap = cv2.applyColorMap(255 - gray_img, cv2.COLORMAP_JET)
+    return heatmap
+
 def stream_tof_img(img_type: str) -> None:
     cam = create_tof_cam()
     cam.Open()
@@ -153,8 +163,9 @@ def stream_tof_img(img_type: str) -> None:
             elif img_type == "Confidence_Map":
                 img = data["Confidence_Map"]
                 display_title = "Confidence_map"
-            # elif img_type == "Depth_Image":
-            #     config_tof_data_comp(cam, "Point_Cloud")
+            elif img_type == "Depth_Image":
+                img = rawdepth_to_heatmap(pcl_to_rawdepth(data["Point_Cloud"]))
+                display_title = "Depth_image"
             else:
                 raise Exception("Not supported image type")
 
