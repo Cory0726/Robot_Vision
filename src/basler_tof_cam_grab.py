@@ -191,3 +191,14 @@ def stream_tof_img(img_type: str) -> None:
     cam.Close()
     cv2.destroyAllWindows
 
+def grab_one_point_cloud():
+    cam = create_tof_cam()
+    cam.Open()
+    config_tof_cam_para(cam)
+    config_tof_data_comp(cam, "Point_Cloud")
+
+    # Grab point cloud data
+    grab_result = cam.GrabOne(1000)  # timeout: 1s
+    assert grab_result.GrabSucceeded(), "Failed to grab depth data"
+
+    return split_tof_container_data(grab_result.GetDataContainer())["Point_Cloud"]  # Unit: mm
