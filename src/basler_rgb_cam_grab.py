@@ -127,8 +127,8 @@ def halcon_to_opencv_intrinsics(
     k1 = K1 * (f_m**2)
     k2 = K2 * (f_m**4)
     k3 = K3 * (f_m**6)
-    p1 = P1 * (f_m**2)
-    p2 = P2 * (f_m**2)
+    p1 = P1 * (f_m)
+    p2 = P2 * (f_m)
 
     dist = np.array([k1, k2, p1, p2, k3], dtype=np.float64)
     return K, dist
