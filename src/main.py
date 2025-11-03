@@ -4,4 +4,4 @@ import cv2
 
 
 if __name__ == '__main__':
-    basler_tof_cam_grab.stream_tof_img("Intensity_Image")
+    basler_tof_cam_grab.stream_tof_img("Confidence_Map")
