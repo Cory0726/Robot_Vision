@@ -10,7 +10,7 @@ def create_rgb_cam_obj():
     Create a RGB camera object using serial number.
     """
     rgb_cam_sn = "24747625"
-    cam = basler_cam_init.create_basler_camera(rgb_cam_sn)
+    cam = basler_cam_init.create_basler_cam(rgb_cam_sn)
     return cam
 
 def config_rgb_cam_para(cam: pylon.InstantCamera) -> None:
