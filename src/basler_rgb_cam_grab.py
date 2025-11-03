@@ -7,11 +7,11 @@ from pathlib import Path
 
 def create_rgb_cam_obj():
     """
-    Create a RGB camera object using serial number.
+    Create a RGB camera object by serial number.
     """
     rgb_cam_sn = "24747625"
-    cam = basler_cam_init.create_basler_cam(rgb_cam_sn)
-    return cam
+    rgb_cam = basler_cam_init.create_basler_cam(rgb_cam_sn)
+    return rgb_cam
 
 def config_rgb_cam_para(cam: pylon.InstantCamera) -> None:
     """
