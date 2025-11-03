@@ -90,7 +90,6 @@ def grab_one_rgb_img():
     if grab_result.GrabSucceeded():
         bayer_img = grab_result.Array
         rgb_img = cv2.cvtColor(bayer_img, cv2.COLOR_BAYER_BG2RGB)  # Convert bayer to RGB
-        cv2.imwrite("rgb_img_by_one_grab.png", rgb_img)
     grab_result.Release()
     cam.Close()
     return rgb_img
