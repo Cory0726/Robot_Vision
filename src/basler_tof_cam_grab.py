@@ -1,3 +1,4 @@
+import os
 import cv2
 from pypylon import pylon
 import basler_cam_init
@@ -147,18 +148,18 @@ def stream_tof_img(img_type: str) -> None:
             data = split_tof_container_data(data_container)
 
             if img_type == "Intensity_Image":
-                intensity_image = data["Intensity_Image"]
+                img= data["Intensity_Image"]
+                display_title = "Intensity_image"
             elif img_type == "Confidence_Map":
-                confidence_map = data["Confidence_Map"]
-            elif img_type == "Depth_Image":
-                config_tof_data_comp(cam, "Point_Cloud")
+                img = data["Confidence_Map"]
+                display_title = "Confidence_map"
+            # elif img_type == "Depth_Image":
+            #     config_tof_data_comp(cam, "Point_Cloud")
             else:
                 raise Exception("Not supported image type")
 
-
             # Display
-            cv2.imshow("intensity", intensity_image)
-
+            cv2.imshow(display_title, img)
             grab_retrieve.Release()
 
         # Read the keyboard keyin
@@ -166,6 +167,14 @@ def stream_tof_img(img_type: str) -> None:
         # Break the loop by pressing q
         if key == ord("q"):
             break
+        elif key == ord("s"):
+            file_number = 0
+            file_path = f"robot_vision_result/{display_title}_{file_number:02d}.png"
+            while os.path.exists(file_path):
+                file_number += 1
+                file_path = f"robot_vision_result/{display_title}_{file_number:02d}.png"
+            cv2.imwrite(file_path, img)
+            print(f"Saved: {file_path}")
 
     cam.StopGrabbing()
     cam.Close()
