@@ -201,9 +201,9 @@ def main():
     color = basler_rgb_cam_grab.grab_one_rgb_img()
 
     # raw depth: use IMREAD_UNCHANGED to preserve bit depth
-    depth_raw = cv2.imread(DEPTH_PATH, cv2.IMREAD_UNCHANGED)
-    if depth_raw is None:
-        raise FileNotFoundError(DEPTH_PATH)
+    # depth_raw = cv2.imread(DEPTH_PATH, cv2.IMREAD_UNCHANGED)
+    # if depth_raw is None:
+    #     raise FileNotFoundError(DEPTH_PATH)
 
     # # 3) Convert depth to meters (float32)
     # depth_m = depth_to_meters(depth_raw, depth_scale_m=DEPTH_SCALE_M)  # (Hd,Wd)
