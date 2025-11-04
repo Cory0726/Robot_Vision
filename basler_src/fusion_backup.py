@@ -363,9 +363,7 @@ class Fusion:
             pointcloud, intensity = self.get_image_blaze()  # (H,W,3), (H,W)
             color = self.get_image_2DCamera()  # (Hc,Wc,3) BGR
             color_warped = self.warp_color_to_depth(pointcloud, color)  # (H,W,3)
-            cv2.imshow('Color', color_warped)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+
             # Prepare data for display in Open3d viewer.
             # Prepare Open3D geometry (N,3) float64
             self.pcd.points = o3d.utility.Vector3dVector(
