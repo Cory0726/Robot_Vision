@@ -81,7 +81,9 @@ class Fusion:
     color_dist = np.zeros((3, 5), np.float32)
 
     def setup_blaze(self):
-        # Connect to first blaze camera.
+        """
+        Connect and configure the Basler blaze camera (3D ToF).
+        """
         dev_info = next(
             (d for d in self.h.device_info_list if str(d.model).startswith('blaze')), None)
         if dev_info is not None:
@@ -124,6 +126,9 @@ class Fusion:
         self.ia_blaze.start()
 
     def setup_2Dcamera(self):
+        """
+        Connect and configure the Basler 2D GigE color camera.
+        """
         # Connect to the first available 2D camera. Ignore blaze cameras, which will
         # be enumerated as well.
         dev_info = next(
@@ -158,7 +163,9 @@ class Fusion:
         self.ia_gev.start()
 
     def close_blaze(self):
-        # Stop image acquisition.
+        """
+        Stop acquisition and disconnect from the blaze camera.
+        """
         self.ia_blaze.stop()
         self.ia_blaze.remote_device.node_map.TriggerMode.value = "Off"
 
@@ -166,7 +173,9 @@ class Fusion:
         self.ia_blaze.destroy()
 
     def close_2DCamera(self):
-        # Stop image acquisition.
+        """
+        Stop acquisition and disconnect from the 2D camera.
+        """
         self.ia_gev.stop()
         self.ia_gev.remote_device.node_map.TriggerMode.value = "Off"
 
@@ -174,10 +183,17 @@ class Fusion:
         self.ia_gev.destroy()
 
     def close_harvesters(self):
-        # Remove the CTI file and reset Harvester.
+        """
+        Release producer files and reset Harvester.
+        """
         self.h.reset()
 
     def get_image_blaze(self):
+        """
+        Fetch one blaze buffer and return:
+           - point cloud as (H, W, 3) float32 (X,Y,Z in meters)
+           - intensity as (H, W) uint16
+        """
         with self.ia_blaze.fetch() as buffer:
             # Warning: The buffer is only valid in the with statement and will be destroyed
             # when you leave the scope.
@@ -203,6 +219,9 @@ class Fusion:
             return np.copy(_3d), np.copy(_2d_intensity)
 
     def get_image_2DCamera(self):
+        """
+        Fetch one color frame, debayer to BGR uint8 image (H, W, 3).
+        """
         with self.ia_gev.fetch() as buffer:
             # Warning: The buffer is only valid in the with statement and will be destroyed
             # when you leave the scope.
@@ -221,12 +240,17 @@ class Fusion:
             return color
 
     def load_calibration_file(self):
+        """
+        Load stereo calibration (R, T, color intrinsics, color distortion) from XML.
+
+        The filename is built from the two device identifiers, matching the calibration script.
+        """
         # It is assumed that the calibration file contains information about the relative
         # orientation of the cameras to each other and the optical calibration of the
         # color camera.
         # The calibration program can be used to create the file.
         dirname = os.path.dirname(__file__)
-        filename = "calibration_" + str(self.ia_blaze.remote_device.node_map.DeviceSerialNumber.value) + \
+        filename = "./calibration/calibration_" + str(self.ia_blaze.remote_device.node_map.DeviceSerialNumber.value) + \
             "_" + str(self.ia_gev.remote_device.node_map.DeviceID.value) + ".xml"
         path = os.path.join(dirname, filename)
 
@@ -245,6 +269,17 @@ class Fusion:
         self.color_dist = cv_file.getNode("colorDistortion").mat()
 
     def warp_color_to_depth(self, pointcloud, color):
+        """
+        Project each 3D point (in blaze frame) to the color image and sample color.
+
+        Args:
+            pointcloud: (H, W, 3) float32, XYZ in meters.
+            color:      (Hc, Wc, 3) uint8, BGR image from the color camera.
+
+        Returns:
+            warped: (H, W, 3) float64, per-point BGR sampled from color image.
+                    Pixels with invalid depth or out-of-bounds projections remain zero.
+        """
         warped = np.zeros(pointcloud.shape, np.float64)
 
         # Project the 3D points into the color camera.
@@ -276,6 +311,7 @@ class Fusion:
 
         return warped
 
+    # Open3D callbacks
     def cbStopGrabbing(self, vis):
         self.stopGrabbing = True
         return False
@@ -285,17 +321,21 @@ class Fusion:
         return False
 
     def run(self):
+        """
+        Main loop: setup devices, load calib, fuse, visualize, and optionally save .pcd.
+        """
         # Set up the cameras.
         self.setup_blaze()
         self.setup_2Dcamera()
         self.load_calibration_file()
 
         # Set up Open3D.
-        glfw_key_s = 83
+        # Open3D viewer setup and key bindings
+        glfw_key_s = 83  # some envs map "S" to GLFW code 83
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
         self.vis = o3d.visualization.VisualizerWithKeyCallback()
-        self.vis.register_key_callback(ord('q'), self.cbStopGrabbing)
-        self.vis.register_key_callback(glfw_key_s, self.cbSavePcd)
+        self.vis.register_key_callback(ord('q'), self.cbStopGrabbing)  # quit
+        self.vis.register_key_callback(glfw_key_s, self.cbSavePcd)  # save .pcd
 
         self.vis.create_window()
 
@@ -316,14 +356,16 @@ class Fusion:
             # To optimize bandwidth usage, the color camera is triggered first to
             # allow it to already transfer image data while the blaze camera is still internally
             # processing the acquired raw data.
+            # Trigger order: color first (transfer), then blaze (process) for bandwidth efficiency.
             self.ia_gev.remote_device.node_map.TriggerSoftware.execute()
             self.ia_blaze.remote_device.node_map.TriggerSoftware.execute()
 
-            pointcloud, intensity = self.get_image_blaze()
-            color = self.get_image_2DCamera()
-            color_warped = self.warp_color_to_depth(pointcloud, color)
+            pointcloud, intensity = self.get_image_blaze()  # (H,W,3), (H,W)
+            color = self.get_image_2DCamera()  # (Hc,Wc,3) BGR
+            color_warped = self.warp_color_to_depth(pointcloud, color)  # (H,W,3)
 
             # Prepare data for display in Open3d viewer.
+            # Prepare Open3D geometry (N,3) float64
             self.pcd.points = o3d.utility.Vector3dVector(
                 pointcloud.reshape(pointcloud.shape[0] * pointcloud.shape[1], 3).astype(np.float64))
 
