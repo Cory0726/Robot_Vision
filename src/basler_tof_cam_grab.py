@@ -203,8 +203,8 @@ def grab_one_point_cloud():
     # Grab point cloud data
     grab_result = cam.GrabOne(1000)  # timeout: 1s
     assert grab_result.GrabSucceeded(), "Failed to grab depth data"
-
-    return split_tof_container_data(grab_result.GetDataContainer())["Intensity_Image"]  # Unit: mm
+    cam.Close()
+    return split_tof_container_data(grab_result.GetDataContainer())["Point_Cloud"]  # Unit: mm
 
 def grab_one_intensity():
     cam = create_tof_cam()
@@ -215,8 +215,8 @@ def grab_one_intensity():
     # Grab point cloud data
     grab_result = cam.GrabOne(1000)  # timeout: 1s
     assert grab_result.GrabSucceeded(), "Failed to grab intensity data"
-
-    return split_tof_container_data(grab_result.GetDataContainer())["Point_Cloud"]  # Unit: mm
+    cam.Close()
+    return split_tof_container_data(grab_result.GetDataContainer())["Intensity_Image"]
 
 
 
