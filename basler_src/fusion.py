@@ -301,8 +301,8 @@ class Fusion:
         # Determine color values for the points of the point cloud.
         for i in range(warped.shape[0]):
             for j in range(warped.shape[1]):
-                if mask_sum[i, j]:
-                    continue
+                # if mask_sum[i, j]:
+                #     continue
                 
                 u = img_points.item(i, j, 1)
                 v = img_points.item(i, j, 0)
