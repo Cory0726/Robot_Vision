@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<colorCameraMatrix type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    865.84685630909837 0. 644.54509103236603 0. 865.84685630909837
+    543.05605023585213 0. 0. 1.</data></colorCameraMatrix>
+<colorDistortion type_id="opencv-matrix">
+  <rows>1</rows>
+  <cols>5</cols>
+  <dt>d</dt>
+  <data>
+    -0.26282629435146926 0.14433595594604237 0. 0. 0.</data></colorDistortion>
+<blazeCameraMatrix type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>f</dt>
+  <data>
+    506.622192 0. 337.713287 0. 506.622192 233.105515 0. 0. 1.</data></blazeCameraMatrix>
+<blazeDistortion type_id="opencv-matrix">
+  <rows>1</rows>
+  <cols>5</cols>
+  <dt>f</dt>
+  <data>
+    0. 0. 0. 0. 0.</data></blazeDistortion>
+<rotation type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    0.99991395025942442 0.0001961683805843444 0.01311692016289749
+    -0.00017974408721034346 0.99999919844930607 -0.001253312733706518
+    -0.013117155509350368 0.0012508471976292311 0.99991318403781015</data></rotation>
+<translation type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>1</cols>
+  <dt>d</dt>
+  <data>
+    -44.713187108780417 0.63686864297566637 8.3986825173940058</data></translation>
+</opencv_storage>
