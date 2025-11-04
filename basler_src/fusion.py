@@ -2,20 +2,11 @@
 This sample demonstrates how to calibrate a system consisting of a Basler GigE color camera
 and a Basler blaze camera.
 
-The project consists of two files: one for calibration and one for fusion. In the first step,
-the calibration file must be used to determine the relative position of the cameras
-to each other.
-
 After the camera system has been calibrated successfully, start the fusion as the second step.
 The sample program uses the data of the color camera to display a colored point cloud. This step
 requires the calibration file that was created during calibration. This file contains the
 intrinsic camera parameters of the blaze camera and the color camera as well as the values for
 the relative rotation and translation between the cameras.
-
-The application note "Merging Color Data of Basler 2D Cameras with Basler blaze Depth Data"
-(AW001665) explains how by combining a 3D camera with a 2D color camera, depth values can be
-displayed in true RGB colors. For more information and to download the application note,
-visit: https://www.baslerweb.com/blaze-rgbd
 """
 
 import os
