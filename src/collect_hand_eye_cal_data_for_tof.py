@@ -1,35 +1,33 @@
 import os
 from pypylon import pylon
 import cv2
-import lab_basler_library
+import basler_tof_cam_grab
 import read_tm_robot_modbus_data
 
 def main():
-    # ToF camera serial number
-    TOF_CAMERA_SN = "24945819"
     # File configuration for saving
     FILE_DIR = "calibration_img/"
     FILE_NAME = "img"
     EXTENSION = ".png"
     
     # ToF camera initialization
-    camera = lab_basler_library.create_basler_camera(TOF_CAMERA_SN)
-    camera.Open()
-    lab_basler_library.config_tof_camera_para(camera)
-    lab_basler_library.config_data_component_type(camera, "Confidence_Map")
+    cam = basler_tof_cam_grab.create_tof_cam()
+    cam.Open()
+    basler_tof_cam_grab.config_tof_cam_para(cam)
+    basler_tof_cam_grab.config_tof_data_comp(cam, "Confidence_Map")
     
     # Starts the grabbing of images with strategy
-    camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
+    cam.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
     print("Start grabbing ...")
-    while camera.IsGrabbing():
+    while cam.IsGrabbing():
         # Get the grab retrieve
-        grab_retrieve = camera.RetrieveResult(1000, pylon.TimeoutHandling_ThrowException)
+        grab_retrieve = cam.RetrieveResult(1000, pylon.TimeoutHandling_ThrowException)
 
         if grab_retrieve.GrabSucceeded():
             # Get the grab result as data container
             data_container = grab_retrieve.GetDataContainer()
             # Get the confidence map
-            data = lab_basler_library.split_container_data(data_container)
+            data = basler_tof_cam_grab.split_tof_container_data(data_container)
             confidence_map = data["Confidence_Map"]
             # Display
             cv2.imshow("Confidence_Map", confidence_map)
@@ -52,8 +50,8 @@ def main():
                 read_tm_robot_modbus_data.save_TM_robot_flange_pose("TM5x_700")
                 
             grab_retrieve.Release()
-    camera.StopGrabbing()
-    camera.Close()
+    cam.StopGrabbing()
+    cam.Close()
     cv2.destroyAllWindows
 
 
