@@ -14,11 +14,6 @@ have a side length of 40 mm each. If the side length of the squares in your prin
 adjust the specified size in the calibration program. Calibration only needs to be performed
 once or whenever the configuration of the system is changed. This is the case when you change,
 e.g., the position of a camera.
-
-The application note "Merging Color Data of Basler 2D Cameras with Basler blaze Depth Data"
-(AW001665) explains how by combining a 3D camera with a 2D color camera, depth values can be
-displayed in true RGB colors. For more information and to download the application note,
-visit: https://www.baslerweb.com/blaze-rgbd
 """
 
 import os
@@ -40,6 +35,7 @@ from harvesters.core import Harvester
 # Chessboard size
 chessboard_rows = 8
 chessboard_cols = 5
+# For a DIN A3 board in this sample, each square is 40 mm.
 field_size = 40  # mm
 
 
@@ -65,6 +61,9 @@ def find_producer(name):
 
 
 class Calibration:
+    """
+    Encapsulates the full stereo calibration workflow.
+    """
     def __init__(self):
         # Create Harvester instances.
         self.h = Harvester()
@@ -91,7 +90,9 @@ class Calibration:
         print(self.h.device_info_list)
 
     def setup_blaze(self):
-        # Connect to first blaze camera.
+        """
+        Connect and configure the Basler blaze camera (3D ToF).
+        """
         dev_info = next(
             (d for d in self.h.device_info_list if str(d.model).startswith('blaze')), None)
         if dev_info is not None:
@@ -107,7 +108,7 @@ class Calibration:
         self.ia_blaze.remote_device.node_map.ComponentEnable.value = False
         self.ia_blaze.remote_device.node_map.PixelFormat.value = "Coord3D_C16"
 
-        # Enable the intensity image.
+        # Enable the intensity image .
         self.ia_blaze.remote_device.node_map.ComponentSelector.value = "Intensity"
         self.ia_blaze.remote_device.node_map.ComponentEnable.value = True
         self.ia_blaze.remote_device.node_map.PixelFormat.value = "Mono16"
@@ -134,6 +135,9 @@ class Calibration:
         self.ia_blaze.start()
 
     def setup_2Dcamera(self):
+        """
+        Connect and configure the Basler 2D GigE color camera.
+        """
         # Connect to the first available 2D camera. Ignore blaze cameras, which will
         # be enumerated as well.
         dev_info = next(
@@ -168,7 +172,9 @@ class Calibration:
         self.ia_gev.start()
 
     def close_blaze(self):
-        # Stop image acquisition.
+        """
+        Stop acquisition and disconnect from the blaze camera.
+        """
         self.ia_blaze.stop()
         self.ia_blaze.remote_device.node_map.TriggerMode.value = "Off"
 
@@ -176,7 +182,9 @@ class Calibration:
         self.ia_blaze.destroy()
 
     def close_2DCamera(self):
-        # Stop image acquisition.
+        """
+        Stop acquisition and disconnect from the 2D camera.
+        """
         self.ia_gev.stop()
         self.ia_gev.remote_device.node_map.TriggerMode.value = "Off"
 
@@ -184,10 +192,18 @@ class Calibration:
         self.ia_gev.destroy()
 
     def close_harvesters(self):
-        # Remove the CTI file and reset Harvester.
+        """
+        Release producer files and reset Harvester.
+        """
         self.h.reset()
 
     def get_image_blaze(self):
+        """
+        Grab a single blaze Intensity frame and convert to 8-bit grayscale.
+
+        Returns:
+            np.ndarray (H, W), dtype=uint8: Grayscale image suitable for corner detection.
+        """
         with self.ia_blaze.fetch() as buffer:
             # Warning: The buffer is only valid in the with statement and will be destroyed
             # when you leave the scope.
@@ -206,6 +222,12 @@ class Calibration:
             return gray
 
     def get_image_2DCamera(self):
+        """
+        Grab a single 2D color camera frame and convert to 8-bit grayscale.
+
+        Returns:
+            np.ndarray (H, W), dtype=uint8: Grayscale image for chessboard corner detection.
+        """
         with self.ia_gev.fetch() as buffer:
             # Warning: The buffer is only valid in the with statement and will be destroyed
             # when you leave the scope.
@@ -224,7 +246,15 @@ class Calibration:
             return gray
 
     def locate_chessboard_corners(self, gray):
-        # Find the chess board corners.
+        """
+        Find and refine chessboard corners in a grayscale image.
+
+        Args:
+            gray (np.ndarray): Grayscale image.
+
+        Returns:
+            (bool, np.ndarray or None): (found_flag, refined_corners)
+        """
         criteria = (cv2.TERM_CRITERIA_EPS +
                     cv2.TERM_CRITERIA_COUNT, 40, 0.001)
         ret, corners = cv2.findChessboardCorners(
@@ -237,6 +267,17 @@ class Calibration:
         return ret, corners
 
     def color_calibration(self, obj_points, color_points, color_shape):
+        """
+        Calibrate the intrinsic parameters of the 2D color camera.
+
+        Args:
+            obj_points (list[np.ndarray]): 3D object points for each view (Z=0 plane).
+            color_points (list[np.ndarray]): Detected 2D corner points per view.
+            color_shape (tuple): Image size (width, height) as expected by OpenCV.
+
+        Returns:
+            (np.ndarray, np.ndarray): (camera_matrix, distortion_coeffs)
+        """
         rms, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, color_points,
                                                            color_shape, None, None, 
                                                            flags= (cv2.CALIB_FIX_ASPECT_RATIO | cv2.CALIB_ZERO_TANGENT_DIST | cv2.CALIB_FIX_K3))
@@ -245,6 +286,12 @@ class Calibration:
         return mtx, dist
 
     def blaze_calibration(self):
+        """
+        Retrieve blaze intrinsics from the device nodemap (treated as known).
+
+        Returns:
+            (np.ndarray, np.ndarray): (camera_matrix, zero_distortion)
+        """
         f = self.ia_blaze.remote_device.node_map.Scan3dFocalLength.value
         cx = self.ia_blaze.remote_device.node_map.Scan3dPrincipalPointU.value
         cy = self.ia_blaze.remote_device.node_map.Scan3dPrincipalPointV.value
@@ -262,6 +309,23 @@ class Calibration:
 
     def stereo_calibration(self, obj_points, color_points, color_camera_matrix,
                            color_dist, color_shape, blaze_points, blaze_camera_matrix, blaze_dist):
+        """
+        Run stereo calibration (blaze - 2D color) to estimate rotation/translation.
+        Save the results to an XML file alongside this script.
+        Args:
+            obj_points: Shared 3D object points
+            color_points: 2D points in the color camera.
+            color_camera_matrix, color_dist: Intrinsic/distortion for the color camera.
+            color_shape: Image size of the color camera (width, height).
+            blaze_points: 2D points in the blaze intensity image.
+            blaze_camera_matrix, blaze_dist: Intrinsic/distortion for blaze.
+
+        Persists:
+            - colorCameraMatrix, colorDistortion
+            - blazeCameraMatrix, blazeDistortion
+            - rotation (R), translation (T)
+
+        """
         rotation = np.zeros((3, 3), np.float32)
         translation = np.zeros((1, 3), np.float32)
 
@@ -278,6 +342,7 @@ class Calibration:
         print('Reprojection error stereo setup:', rms)
 
         # Write calibration.
+        # Persist calibration results to an XML file (OpenCV FileStorage).
         dirname = os.path.dirname(__file__)
         filename = "calibration_" + str(self.ia_blaze.remote_device.node_map.DeviceSerialNumber.value) + \
             "_" + str(self.ia_gev.remote_device.node_map.DeviceID.value) + ".xml"
@@ -293,6 +358,14 @@ class Calibration:
         print("Wrote calibration to", path)
 
     def run(self):
+        """
+        - Sets up both camera.
+        - Shows live windows.
+        - Main interactive loop:
+            - Press 's' to sample chessboard images from both cameras (if detectable).
+            - Press 'c' to run calibration when enough samples exist.
+            - Press 'q' (or Esc) to quit.
+        """
         # Set up the cameras.
         self.setup_blaze()
         self.setup_2Dcamera()
