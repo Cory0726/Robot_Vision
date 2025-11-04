@@ -4,9 +4,8 @@ import numpy as np
 import basler_rgb_cam_grab
 import basler_tof_cam_grab
 # ---------------------- Config ----------------------
-CALIB_XML = r"./calibration/calibration_<blazeSerial>_<colorDeviceID>.xml"
-DEPTH_PATH = r"./depth.png"   # or .tiff/.exr... your raw depth
-COLOR_PATH = r"./rgb.png"     # BGR or RGB (we will assume BGR uint8)
+CALIB_XML = f"./calibration_24945819_24747625.xml"
+
 
 # Set this if you know your units. If your raw depth is uint16 in millimeters (typical),
 # set DEPTH_SCALE_M = 0.001. If it's already meters in float, set 1.0.
