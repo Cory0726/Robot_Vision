@@ -26,6 +26,7 @@ calibrate the joint camera system.
 ### Python package
 ```commandline
 pip install harvesters
+conda install conda-forge::open3d
 ```
 ### calibration.py
 The calibration of a system consisting of a Basler GigE color camera and a Basler blaze camera.
