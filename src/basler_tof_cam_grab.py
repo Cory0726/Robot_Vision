@@ -204,7 +204,21 @@ def grab_one_point_cloud():
     grab_result = cam.GrabOne(1000)  # timeout: 1s
     assert grab_result.GrabSucceeded(), "Failed to grab depth data"
 
+    return split_tof_container_data(grab_result.GetDataContainer())["Intensity_Image"]  # Unit: mm
+
+def grab_one_intensity():
+    cam = create_tof_cam()
+    cam.Open()
+    config_tof_cam_para(cam)
+    config_tof_data_comp(cam, "Intensity_Image")
+
+    # Grab point cloud data
+    grab_result = cam.GrabOne(1000)  # timeout: 1s
+    assert grab_result.GrabSucceeded(), "Failed to grab intensity data"
+
     return split_tof_container_data(grab_result.GetDataContainer())["Point_Cloud"]  # Unit: mm
+
+
 
 def halcon_to_opencv_intrinsics_tof(
     # Pixel size [micrometers]
