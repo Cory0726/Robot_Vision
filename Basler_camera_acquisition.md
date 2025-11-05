@@ -2,6 +2,8 @@
  
 - [Camera configuration](#camera-configuration)
 - [Basler SDK](#basler-sdk)
+  - [Basler Pylon API](#basler-pylon-api)  
+- [Scripts](#scripts)
 
 ## Camera configuration
 ### ToF camera
@@ -41,3 +43,8 @@ Specially of blaze series camera (3D camera)
   - [Device Enumeration and Device Configuration](https://github.com/basler/pypylon-samples/blob/main/notebooks/basic-examples/deviceenumeration_and_configuration.ipynb)
   - [Multi-camera handling](https://github.com/basler/pypylon-samples/blob/main/notebooks/basic-examples/multicamera_handling.ipynb)
   - [Grab Strategies](https://github.com/basler/pypylon-samples/blob/main/notebooks/basic-examples/grabstrategies.ipynb)
+
+## Scripts
+- Basler camera init : `./src/basler_cam_init.py`
+- Basler RGB camera grab : `./src/basler_rgb_cam_grab.py`
+- Basler ToF camera grab : `./src/basler_tof_cam_grab.py`

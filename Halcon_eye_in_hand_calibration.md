@@ -1,5 +1,11 @@
  # HALCON Eye-in-Hand Calibration
 
+- [Halcon file format](#halcon-file-format)
+- [Halcon sample code](#halcon-sample-code)
+- [Acquiring calibration images](#acquiring-calibration-images)
+- [Camera intrinsic calibration](#camera-intrinsic-calibration)
+- [Hand-eye calibration](#hand-eye-calibration)
+
 ## HALCON
 ### HALCON file format
 #### .hodj file
@@ -37,7 +43,7 @@ HALCON HDevelop : `File > Browse HDevelop Example Programs > (Category) Applicat
 ### Setup
 - Calibration Task: *Full Calibration*
 - Calibration Plate: 
-    - Description File: `.\src\calibration_plate_description\calplateHG0608_2.cpd`
+    - Description File: `.\src\halcon_calibration_plate_description\calplateHG0608_2.cpd`
     - Thickness: *10 mm*
 - Camera Parameters:
     - Camera Model: 
@@ -48,7 +54,7 @@ HALCON HDevelop : `File > Browse HDevelop Example Programs > (Category) Applicat
 ### Calibration
 - Image Source: Image Files
 - Calibration: `Load` the image files from your device and `Calibration`, then the calibration result will display.
-  - Image files: `.\src\calibration_img\`
+  - Image files: `.\src\halcon_calibration_img\`
 
 ### Results
 - Calibration Status:
@@ -61,8 +67,8 @@ HALCON HDevelop : `File > Browse HDevelop Example Programs > (Category) Applicat
 - Calibration:
     - Generation Mode: Select `Calibration Data (Tuple)`, and `Insert Code`, then use the HALCON function : `write_cam_par` to convert tuple to .dat file for hand-eye calibration using.
 - Output file : 
-  - For RGB Camera : `.\src\calibration_result\RGB_cam_intrinsic_cal_SN24747625.dat`
-  - For ToF Camera : `.\src\calibration_result\ToF_cam_intrinsic_cal_SN24945819.dat`
+  - For RGB Camera : `.\src\halcon_calibration_result\RGB_cam_intrinsic_cal_SN24747625.dat`
+  - For ToF Camera : `.\src\halcon_calibration_result\ToF_cam_intrinsic_cal_SN24945819.dat`
 
 ## Hand-eye calibration
 Hand-eye calibration aims to find the precise position and orientation of a camera relative to the robot’s end-effector or base.
@@ -75,11 +81,13 @@ Hand-eye calibration aims to find the precise position and orientation of a came
   - For RGB Camera : `.\src\collect_hand_eye_cal_data_for_rgb.py`
   - For ToF Camera : `.\src\collect_hand_eye_cal_data_for_tof.py`
 #### Calibration step
-- Open file: `.\src\hand_in_eye_calibration.hdev`
+- Open file: 
+  - For RGB Camera: `.\src\RGB_cam_hand_in_eye_calibration.hdev`
+  - For ToF Camera: `.\src\ToF_cam_hand_in_eye_calibration.hdev`
 - Configurate the **Configuration Section** part
 - Run the program, it will create : 
-  - For RGB Camera : `.\src\calibration_result\flange_in_RGB_cam_SN24747625.dat`
-  - For ToF Camera : `.\src\calibration_result\flange_in_ToF_cam_SN24945819.dat`
+  - For RGB Camera : `.\src\halcon_calibration_result\flange_in_RGB_cam_SN24747625.dat`
+  - For ToF Camera : `.\src\halcon_calibration_result\flange_in_ToF_cam_SN24945819.dat`
 
 
 

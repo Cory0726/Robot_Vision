@@ -4,7 +4,7 @@
 - [TM robot (TMflow) Modbus configuration](#tm-robot-tmflow-modbus-configuration)
 - [TM robot (TMflow) Modbus lists](#tm-robot-tmflow-modbus-lists)
 - [Modbus Python API](#modbus-python-api)
-
+- [Script](#script)
 
 ## Modbus communication protocal
 Modbus communication follows a **master-slave** model where the master sends a request and the slave responds with the corresponding data or status.  
@@ -51,4 +51,5 @@ Modbus communication follows a **master-slave** model where the master sends a r
 - Python API : [pymodbus](https://pypi.org/project/pymodbus/)
 - [Example code](https://pymodbus.readthedocs.io/en/latest/source/examples.html)
 
-  
+## Script
+**File :** `./src/read_tm_robot_modbus_data.py`
