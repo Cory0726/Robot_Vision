@@ -7,7 +7,7 @@
 <l as_id="calibration" as_name="Calibration 01" as_grp="[2,1]" as_ord="1">CameraParameters := ['area_scan_polynomial',0.00709725,5067.98,8.93518e+06,-6.08453e+10,-0.128108,0.130449,8.30179e-06,8.3e-06,635.69,535.704,1280,1024]</l>
 <l as_id="calibration" as_name="Calibration 01" as_grp="[2,2]" as_ord="1">CameraPose := [-0.0404027,-0.0325042,0.380054,1.34077,3.54113,359.692,0]</l>
 <c></c>
-<l>write_cam_par (CameraParameters, './calibration_result/RGB_cam_intrinsic_cal_SN24747625.dat')</l>
+<l>write_cam_par (CameraParameters, './halcon_calibration_result/RGB_cam_intrinsic_cal_SN24747625.dat')</l>
 <l as_id="calibration" as_name="Calibration 01" as_grp="[4,1]" as_ord="1">stop ()</l>
 </body>
 <docu id="main">

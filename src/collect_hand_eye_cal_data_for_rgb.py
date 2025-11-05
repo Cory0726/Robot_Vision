@@ -6,11 +6,6 @@ import read_tm_robot_modbus_data
 
 def main():
 
-    # File configuration for saving
-    FILE_DIR = "calibration_img/"
-    FILE_NAME = "img"
-    EXTENSION = ".png"
-    
     # RGB camera initialization
     cam = basler_rgb_cam_grab.create_rgb_cam_obj()
     cam.Open()
@@ -37,10 +32,10 @@ def main():
             # Save the current image by pressing s
             elif key == ord("s"):
                 file_number = 0
-                file_path = f"calibration_img/img{file_number:02d}.png"
+                file_path = f"halcon_calibration_img/img{file_number:02d}.png"
                 while os.path.exists(file_path):
                     file_number += 1
-                    file_path = f"calibration_img/img{file_number:02d}.png"
+                    file_path = f"halcon_calibration_img/img{file_number:02d}.png"
                 # Convert color to gray
                 gray_img = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
                 cv2.imwrite(file_path, gray_img)

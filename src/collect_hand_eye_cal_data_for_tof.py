@@ -6,7 +6,7 @@ import read_tm_robot_modbus_data
 
 def main():
     # File configuration for saving
-    FILE_DIR = "calibration_img/"
+    FILE_DIR = "./halcon_calibration_img"
     FILE_NAME = "img"
     EXTENSION = ".png"
     

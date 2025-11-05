@@ -2,8 +2,8 @@
 My robot vision note for TM-robot and Basler camera (ToF &amp; RGB).
 
 ## Basler camera
-- [Basler camer acquisition (ToF & RGB)](./Basler_camera_acquisition.md)
-
+- [Basler camera acquisition (ToF & RGB)](./Basler_camera_acquisition.md)
+- [Basler camera (RGB & ToF) data fusion](./Basler_camera_data_fusion.md)
 ## TM Robot
 - [TM robot Modbus communication](./TM_robot_Modbus_com.md)
 

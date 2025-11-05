@@ -10,24 +10,24 @@
 <c>* Disable automatic window updates to improve performance during processing</c>
 <l>dev_update_off ()</l>
 <c>* Prefix file path (dir) for calibration images</c>
-<l>CalibrationImagePath := './calibration_img/'</l>
+<l>CalibrationImagePath := './halcon_calibration_img/'</l>
 <c>* File name of the calibration image (.png)</c>
 <l>CalibrationName := 'img'</l>
 <c>* Prefix flie path (dir) for robot pose data</c>
-<l>PoseDataPath := './pose_dat/'</l>
+<l>PoseDataPath := './halcon_pose_dat/'</l>
 <c>* File name of the robot pose data (.dat)</c>
 <l>PoseDataName := 'flange_pose'</l>
 <c></c>
 <c>* Prefix file path (dir) for calibration results</c>
-<l>CalibrationResultPath := './calibration_result/'</l>
+<l>CalibrationResultPath := './halcon_calibration_result/'</l>
 <c>* File name of the calibration result</c>
 <l>CalibrationResultName := 'flange_in_ToF_cam_SN24945819'</l>
 <c>* Total number of image-pose pairs to use</c>
 <l>Num_pair := 21</l>
 <c>* Calibration plate model file</c>
-<l>CalTabFile := './calibration_plate_description/calplateHG0608_2.cpd'</l>
+<l>CalTabFile := './halcon_calibration_plate_description/calplateHG0608_2.cpd'</l>
 <c>* Load camera intrinsic parameters from file</c>
-<l>read_cam_par ('./calibration_result/ToF_cam_intrinsic_cal_SN24945819.dat', CameraParam)</l>
+<l>read_cam_par ('./halcon_calibration_result/ToF_cam_intrinsic_cal_SN24945819.dat', CameraParam)</l>
 <c></c>
 <c></c>
 <c>* ===== Check the first image for image's width and height =====</c>

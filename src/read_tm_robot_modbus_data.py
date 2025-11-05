@@ -63,7 +63,7 @@ def save_TM_robot_flange_pose(tm_model: str) -> None:
     JOINT6 = 7023
 
     # File configuration for saving
-    FILE_DIR = "./pose_dat/"
+    FILE_DIR = "./halcon_pose_dat/"
     FILE_NAME = "flange_pose"
     EXTENSION = ".dat"
 
