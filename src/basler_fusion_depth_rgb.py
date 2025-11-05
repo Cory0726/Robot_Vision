@@ -3,16 +3,6 @@ import numpy as np
 
 import basler_rgb_cam_grab
 import basler_tof_cam_grab
-# ---------------------- Config ----------------------
-CALIB_XML = f"./basler_calibration/calibration_24945819_24747625.xml"
-
-# Set this if you know your units. If your raw depth is uint16 in millimeters (typical),
-# set DEPTH_SCALE_M = 0.001. If it's already meters in float, set 1.0.
-DEPTH_SCALE_M = None  # None = auto: uint16 -> 0.001, float -> 1.0
-
-# Interpolation when sampling color image at projected coords: 'nearest' or 'bilinear'
-INTERP = "nearest"
-# ----------------------------------------------------
 
 def load_calibration_file(xml_path):
     """
@@ -52,25 +42,6 @@ def load_calibration_file(xml_path):
     T  = T.astype(np.float32).reshape(3,1)
 
     return Kc, dc, Kd, dd, R, T
-
-def depth_to_meters(depth_raw, depth_scale_m=None):
-    """
-    Convert raw depth to meters as float32.
-    If depth_scale_m is None, auto-detect:
-        - uint16: assume millimeters -> 0.001
-        - float:  assume already in meters -> 1.0
-    """
-    if depth_scale_m is None:
-        if depth_raw.dtype == np.uint16:
-            depth_scale_m = 0.001
-        else:
-            depth_scale_m = 1.0
-
-    depth_m = depth_raw.astype(np.float32) * float(depth_scale_m)
-    # Treat non-positive as invalid
-    depth_m[~np.isfinite(depth_m)] = 0.0
-    depth_m[depth_m <= 0] = 0.0
-    return depth_m
 
 def project_points_to_color(pcl, R, T, Kc, dc, color_img, interp="nearest"):
     """
@@ -146,24 +117,14 @@ def project_points_to_color(pcl, R, T, Kc, dc, color_img, interp="nearest"):
     else:
         raise ValueError("interp must be 'nearest' or 'bilinear'")
 
-
-def depth_m_to_uint16_mm(depth_m):
-    """Meters -> uint16 millimeters; invalid(<=0 or nan) -> 0."""
-    d = depth_m.copy()
-    invalid = (~np.isfinite(d)) | (d <= 0)
-    d[invalid] = 0.0
-    d_mm = np.clip(np.round(d * 1000.0), 0, 65535).astype(np.uint16)
-    return d_mm
-
-
 # -------------------- Main pipeline -----------------
 def main(color_img, pcl):
     # Load calibration parameter
-    Kc, dc, Kd, dd, R, T = load_calibration_file(CALIB_XML)
+    Kc, dc, Kd, dd, R, T = load_calibration_file(f"./basler_calibration/calibration_24945819_24747625.xml")
 
     # Project organized 3D points into color and sample the RGB on the depth grid
     aligned_rgb, valid_mask = project_points_to_color(
-        pcl, R, T, Kc, dc, color_img, interp=INTERP
+        pcl, R, T, Kc, dc, color_img, interp="nearest"
     )  # (Hd,Wd,3), (Hd,Wd)
 
     # Produce aligned uint16 depth in millimeters
@@ -189,4 +150,6 @@ def main(color_img, pcl):
     print("Done. aligned_rgb.png / aligned_depth_mm.png saved.")
 
 if __name__ == "__main__":
-    main()
+    color_img = basler_rgb_cam_grab.grab_one_rgb_img()
+    pcl = basler_tof_cam_grab.grab_one_point_cloud()
+    main(color_img, pcl)
