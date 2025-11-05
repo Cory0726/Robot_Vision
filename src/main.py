@@ -10,11 +10,10 @@ if __name__ == '__main__':
     pcl = basler_tof_cam_grab.grab_one_point_cloud()
 
     pcl_color_frame = basler_fusion_depth_rgb.transform_pcl_to_color_frame(pcl)
-
-    raw_depth_color_frame = basler_tof_cam_grab.pcl_to_rawdepth(pcl_color_frame)
+    depth_color_frame = basler_fusion_depth_rgb.project_depth_to_color_frame(pcl, color_img)
 
     overlay_heatmap, overlay_edges = basler_fusion_depth_rgb.visualize_rgb_depth_alignment(
-        raw_depth_color_frame, color_img
+        depth_color_frame, color_img
     )
 
     cv2.imshow("overlay_heatmap", overlay_heatmap)
