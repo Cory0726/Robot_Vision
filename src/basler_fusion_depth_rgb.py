@@ -4,7 +4,7 @@ import numpy as np
 import basler_rgb_cam_grab
 import basler_tof_cam_grab
 
-def load_calibration_file(xml_path):
+def load_cam_calibration_file():
     """
     Load intrinsic/extrinsic matrices from the calibration XML.
 
@@ -15,6 +15,7 @@ def load_calibration_file(xml_path):
           Kd, dd: blaze (depth) intrinsics, distortion (often zeros)
           R, T:   transform from depth(blaze) frame to color frame
     """
+    xml_path = f"./basler_calibration/calibration_24945819_24747625.xml"
     fs = cv2.FileStorage(xml_path, cv2.FILE_STORAGE_READ)
     if not fs.isOpened():
         raise FileNotFoundError(f"Cannot open calibration file: {xml_path}")
@@ -43,7 +44,7 @@ def load_calibration_file(xml_path):
 
     return Kc, dc, Kd, dd, R, T
 
-def project_points_to_color(pcl, R, T, Kc, dc, color_img, interp="nearest"):
+def project_points_to_color(pcl, color_img, interp="nearest"):
     """
     Project organized 3D points (depth frame) into the color camera and sample color.
 
@@ -58,6 +59,10 @@ def project_points_to_color(pcl, R, T, Kc, dc, color_img, interp="nearest"):
         color_on_depth: (Hd, Wd, 3) uint8, BGR on depth grid (zeros where invalid)
         valid_mask:     (Hd, Wd) bool, True if sampled inside color bounds and Z>0
     """
+
+    # Load calibration parameter
+    Kc, dc, Kd, dd, R, T = load_cam_calibration_file()
+
     Hd, Wd, _ = pcl.shape
     Hc, Wc = color_img.shape[:2]
 
@@ -118,14 +123,12 @@ def project_points_to_color(pcl, R, T, Kc, dc, color_img, interp="nearest"):
         raise ValueError("interp must be 'nearest' or 'bilinear'")
 
 # -------------------- Main pipeline -----------------
-def main(color_img, pcl):
-    # Load calibration parameter
-    Kc, dc, Kd, dd, R, T = load_calibration_file(f"./basler_calibration/calibration_24945819_24747625.xml")
-
+def main():
+    # Grab point cloud and color image
+    color_img = basler_rgb_cam_grab.grab_one_rgb_img()
+    pcl = basler_tof_cam_grab.grab_one_point_cloud()
     # Project organized 3D points into color and sample the RGB on the depth grid
-    aligned_rgb, valid_mask = project_points_to_color(
-        pcl, R, T, Kc, dc, color_img, interp="nearest"
-    )  # (Hd,Wd,3), (Hd,Wd)
+    aligned_rgb, valid_mask = project_points_to_color(pcl, color_img, interp="nearest")  # (Hd,Wd,3), (Hd,Wd)
 
     # Produce aligned uint16 depth in millimeters
     aligned_depth_mm = basler_tof_cam_grab.pcl_to_rawdepth(pcl)
@@ -150,6 +153,4 @@ def main(color_img, pcl):
     print("Done. aligned_rgb.png / aligned_depth_mm.png saved.")
 
 if __name__ == "__main__":
-    color_img = basler_rgb_cam_grab.grab_one_rgb_img()
-    pcl = basler_tof_cam_grab.grab_one_point_cloud()
-    main(color_img, pcl)
+    main()
