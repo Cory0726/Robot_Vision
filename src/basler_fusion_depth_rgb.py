@@ -6,7 +6,6 @@ import basler_tof_cam_grab
 # ---------------------- Config ----------------------
 CALIB_XML = f"./basler_calibration/calibration_24945819_24747625.xml"
 
-
 # Set this if you know your units. If your raw depth is uint16 in millimeters (typical),
 # set DEPTH_SCALE_M = 0.001. If it's already meters in float, set 1.0.
 DEPTH_SCALE_M = None  # None = auto: uint16 -> 0.001, float -> 1.0
@@ -15,8 +14,6 @@ DEPTH_SCALE_M = None  # None = auto: uint16 -> 0.001, float -> 1.0
 INTERP = "nearest"
 # ----------------------------------------------------
 
-
-# ------------ Utilities (English comments) ----------
 def load_calibration(xml_path):
     """
     Load intrinsic/extrinsic matrices from the calibration XML.
