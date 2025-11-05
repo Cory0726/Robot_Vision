@@ -141,7 +141,6 @@ def transform_pcl_to_color_frame(pcl):
     Xc = (pts @ R.T) + T.ravel()
     return Xc.reshape(Hd, Wd, 3).astype(np.float32)  # pcl_on_color_frame
 
-# ---------- Project Depth Points + Z-buffer Rasterization ----------
 def project_depth_to_color_frame(pcl, color_img):
     """
     Directly project the depth camera point cloud (in mm) into the color camera frame,
@@ -211,8 +210,8 @@ def project_depth_to_color_frame(pcl, color_img):
     return raw_depth, hit  # (depth_rgb, valid_mask)
 
 def visualize_rgb_depth_alignment(
-    color_img: np.ndarray,
-    depth: np.ndarray,
+    color_img,
+    depth,
     alpha_rgb: float = 0.6,
     alpha_depth: float = 0.4
 ):
