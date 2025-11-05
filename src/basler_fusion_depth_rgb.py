@@ -14,7 +14,7 @@ DEPTH_SCALE_M = None  # None = auto: uint16 -> 0.001, float -> 1.0
 INTERP = "nearest"
 # ----------------------------------------------------
 
-def load_calibration(xml_path):
+def load_calibration_file(xml_path):
     """
     Load intrinsic/extrinsic matrices from the calibration XML.
 
@@ -53,7 +53,6 @@ def load_calibration(xml_path):
 
     return Kc, dc, Kd, dd, R, T
 
-
 def depth_to_meters(depth_raw, depth_scale_m=None):
     """
     Convert raw depth to meters as float32.
@@ -73,12 +72,12 @@ def depth_to_meters(depth_raw, depth_scale_m=None):
     depth_m[depth_m <= 0] = 0.0
     return depth_m
 
-def project_points_to_color(pts3d, R, T, Kc, dc, color_img, interp="nearest"):
+def project_points_to_color(pcl, R, T, Kc, dc, color_img, interp="nearest"):
     """
     Project organized 3D points (depth frame) into the color camera and sample color.
 
     Args:
-        pts3d:     (Hd, Wd, 3) float32, XYZ in depth frame
+        pcl:     (Hd, Wd, 3) float32, XYZ in depth frame
         R, T:      color <- depth transform (3x3, 3x1)
         Kc, dc:    color intrinsics and distortion
         color_img: (Hc, Wc, 3) uint8 BGR
@@ -88,10 +87,10 @@ def project_points_to_color(pts3d, R, T, Kc, dc, color_img, interp="nearest"):
         color_on_depth: (Hd, Wd, 3) uint8, BGR on depth grid (zeros where invalid)
         valid_mask:     (Hd, Wd) bool, True if sampled inside color bounds and Z>0
     """
-    Hd, Wd, _ = pts3d.shape
+    Hd, Wd, _ = pcl.shape
     Hc, Wc = color_img.shape[:2]
 
-    pts = pts3d.reshape(-1, 3)
+    pts = pcl.reshape(-1, 3)
 
     # OpenCV can take a 3x3 rotation matrix in place of rvec; cv2 will convert internally
     img_pts, _ = cv2.projectPoints(pts, R, T, Kc, dc)  # -> (N,1,2)
@@ -158,31 +157,18 @@ def depth_m_to_uint16_mm(depth_m):
 
 
 # -------------------- Main pipeline -----------------
-def main():
-    # 1) Load calibration
-    Kc, dc, Kd, dd, R, T = load_calibration(CALIB_XML)
+def main(color_img, pcl):
+    # Load calibration parameter
+    Kc, dc, Kd, dd, R, T = load_calibration_file(CALIB_XML)
 
-    color = basler_rgb_cam_grab.grab_one_rgb_img()
-
-    # raw depth: use IMREAD_UNCHANGED to preserve bit depth
-    # depth_raw = cv2.imread(DEPTH_PATH, cv2.IMREAD_UNCHANGED)
-    # if depth_raw is None:
-    #     raise FileNotFoundError(DEPTH_PATH)
-
-    # # 3) Convert depth to meters (float32)
-    # depth_m = depth_to_meters(depth_raw, depth_scale_m=DEPTH_SCALE_M)  # (Hd,Wd)
-    #
-    # # 4) Backproject to 3D in depth frame (organized point cloud)
-    # pts3d = backproject_depth_to_3d(depth_m, Kd)  # (Hd,Wd,3)
-    pts3d = basler_tof_cam_grab.grab_one_point_cloud()
-    # 5) Project to color and sample the RGB on the depth grid
+    # Project organized 3D points into color and sample the RGB on the depth grid
     aligned_rgb, valid_mask = project_points_to_color(
-        pts3d, R, T, Kc, dc, color, interp=INTERP
+        pcl, R, T, Kc, dc, color_img, interp=INTERP
     )  # (Hd,Wd,3), (Hd,Wd)
 
-    # # 6) Produce aligned uint16 depth in millimeters
-    # aligned_depth_mm = depth_m_to_uint16_mm(depth_m)  # (Hd,Wd) uint16
-    aligned_depth_mm = basler_tof_cam_grab.pcl_to_rawdepth(pts3d)
+    # Produce aligned uint16 depth in millimeters
+    aligned_depth_mm = basler_tof_cam_grab.pcl_to_rawdepth(pcl)
+
     # 7) Optional: visualization
     depth_vis = cv2.applyColorMap(
         cv2.convertScaleAbs(aligned_depth_mm, alpha=1.0/16.0),  # quick stretch for viewing
