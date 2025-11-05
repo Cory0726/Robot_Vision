@@ -122,4 +122,21 @@ def warp_depth_with_color(pcl, color_img, interp="nearest"):
     else:
         raise ValueError("interp must be 'nearest' or 'bilinear'")
 
+def transform_pcl_to_color_frame(pcl):
+    """
+    Transform an organized point cloud from DEPTH frame to COLOR frame.
 
+    Args:
+        pcl: (Hd, Wd, 3) float32, XYZ in depth frame, **millimeters**
+        R:      (3,3) rotation,  color <- depth
+        T:      (3,1) translation, color <- depth, **millimeters**
+
+    Returns:
+        pcl_color_mm: (Hd, Wd, 3) float32, XYZ in color frame, **millimeters**
+    """
+    # Load calibration parameter
+    Kc, dc, Kd, dd, R, T = load_cam_calibration_file()
+    Hd, Wd, _ = pcl.shape
+    pts = pcl.reshape(-1, 3).astype(np.float32)
+    Xc = (pts @ R.T) + T.ravel()
+    return Xc.reshape(Hd, Wd, 3).astype(np.float32)
