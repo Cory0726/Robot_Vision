@@ -12,14 +12,13 @@ if __name__ == '__main__':
     pcl_color_frame = basler_fusion_depth_rgb.transform_pcl_to_color_frame(pcl)
 
     raw_depth_color_frame = basler_tof_cam_grab.pcl_to_rawdepth(pcl_color_frame)
-    depth_color_frame_heatmap = basler_tof_cam_grab.rawdepth_to_heatmap(raw_depth_color_frame)
 
-    test = basler_fusion_depth_rgb.project_depth_to_color_frame(pcl, color_img)
-    test_heatmap = basler_tof_cam_grab.rawdepth_to_heatmap(test)
-    cv2.imshow("raw_depth_color_frame", raw_depth_color_frame)
-    cv2.imshow("depth_color_frame", depth_color_frame_heatmap)
-    cv2.imshow("test", test)
-    cv2.imshow("test_heatmap", test_heatmap)
+    overlay_heatmap, overlay_edges = basler_fusion_depth_rgb.visualize_rgb_depth_alignment(
+        raw_depth_color_frame, color_img
+    )
+
+    cv2.imshow("overlay_heatmap", overlay_heatmap)
+    cv2.imshow("overlay_edges", overlay_edges)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
