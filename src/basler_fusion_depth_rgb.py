@@ -4,7 +4,7 @@ import numpy as np
 import basler_rgb_cam_grab
 import basler_tof_cam_grab
 # ---------------------- Config ----------------------
-CALIB_XML = f"./calibration_24945819_24747625.xml"
+CALIB_XML = f"./basler_calibration/calibration_24945819_24747625.xml"
 
 
 # Set this if you know your units. If your raw depth is uint16 in millimeters (typical),
@@ -75,35 +75,6 @@ def depth_to_meters(depth_raw, depth_scale_m=None):
     depth_m[~np.isfinite(depth_m)] = 0.0
     depth_m[depth_m <= 0] = 0.0
     return depth_m
-
-
-# def backproject_depth_to_3d(depth_m, Kd):
-#     """
-#     Back-project a depth image (meters) to an organized point cloud in the depth camera frame.
-#
-#     Args:
-#         depth_m: (Hd, Wd) float32, meters
-#         Kd:      (3x3) intrinsics of the depth/blaze camera
-#
-#     Returns:
-#         pts_3d: (Hd, Wd, 3) float32, XYZ in meters
-#     """
-#     Hd, Wd = depth_m.shape
-#     fx, fy = Kd[0,0], Kd[1,1]
-#     cx, cy = Kd[0,2], Kd[1,2]
-#
-#     # Create a pixel grid (u = x, v = y)
-#     u = np.arange(Wd, dtype=np.float32)
-#     v = np.arange(Hd, dtype=np.float32)
-#     uu, vv = np.meshgrid(u, v)
-#
-#     Z = depth_m
-#     X = (uu - cx) * Z / fx
-#     Y = (vv - cy) * Z / fy
-#
-#     pts = np.dstack((X, Y, Z)).astype(np.float32)  # (Hd, Wd, 3)
-#     return pts
-
 
 def project_points_to_color(pts3d, R, T, Kc, dc, color_img, interp="nearest"):
     """
@@ -194,10 +165,6 @@ def main():
     # 1) Load calibration
     Kc, dc, Kd, dd, R, T = load_calibration(CALIB_XML)
 
-    # 2) Read inputs
-    # color = cv2.imread(COLOR_PATH, cv2.IMREAD_COLOR)       # (Hc,Wc,3) BGR uint8
-    # if color is None:
-    #     raise FileNotFoundError(COLOR_PATH)
     color = basler_rgb_cam_grab.grab_one_rgb_img()
 
     # raw depth: use IMREAD_UNCHANGED to preserve bit depth
