@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
     raw_depth_color_frame = basler_tof_cam_grab.pcl_to_rawdepth(pcl_color_frame)
     cv2.imshow("raw_depth_color_frame", raw_depth_color_frame)
-
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
