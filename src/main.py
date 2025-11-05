@@ -11,7 +11,8 @@ if __name__ == '__main__':
 
     pcl_color_frame = basler_fusion_depth_rgb.transform_pcl_to_color_frame(pcl)
 
-    print(pcl_color_frame[:,:,2].max())
-    print(pcl_color_frame[:,:,2].min())
+    raw_depth_color_frame = basler_tof_cam_grab.pcl_to_rawdepth(pcl_color_frame)
+    cv2.imshow("raw_depth_color_frame", raw_depth_color_frame)
+
 
 
