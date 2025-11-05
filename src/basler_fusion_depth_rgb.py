@@ -142,12 +142,14 @@ def main():
     overlay = cv2.addWeighted(aligned_rgb, 0.6, depth_heatmap, 0.4, 0)
 
     cv2.imshow("Aligned RGB (depth grid)", aligned_rgb)
+    cv2.imshow("Valid Mask", valid_mask)
     cv2.imshow("Aligned Depth colormap (depth grid)", depth_heatmap)
     cv2.imshow("Overlay", overlay)
     cv2.waitKey(0)
 
     # 8) Save outputs if you want
     cv2.imwrite("aligned_rgb.png", aligned_rgb)
+    cv2.imwrite("valid_mask.png", valid_mask)
     cv2.imwrite("raw_depth.png", raw_depth)   # 16-bit PNG
     cv2.imwrite("overlay.png", overlay)
 
