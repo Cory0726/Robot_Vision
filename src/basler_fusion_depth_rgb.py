@@ -167,7 +167,7 @@ def project_depth_to_color_frame(pcl, color_img):
     Kc, dc, Kd, dd, R, T = load_cam_calibration_file()
 
     # Prepare and flatten input points
-    Hc, Wc = color_img.shape
+    Hc, Wc = color_img[:,:,0].shape
     Hd, Wd, _ = pcl.shape
     pts_d = pcl.reshape(-1, 3).astype(np.float32)  # (N,3), in mm
 
