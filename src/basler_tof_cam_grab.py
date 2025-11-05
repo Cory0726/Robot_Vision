@@ -195,6 +195,11 @@ def stream_tof_img(img_type: str) -> None:
     cv2.destroyAllWindows
 
 def grab_one_point_cloud():
+    """
+    Grab one point cloud from camera.
+    Returns:
+        pcl: point cloud (unit : mm)
+    """
     cam = create_tof_cam()
     cam.Open()
     config_tof_cam_para(cam)

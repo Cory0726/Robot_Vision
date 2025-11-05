@@ -4,12 +4,12 @@ import basler_rgb_cam_grab
 import basler_tof_cam_grab
 import cv2
 
-from src.basler_tof_cam_grab import pcl_to_rawdepth
 
 if __name__ == '__main__':
-    intensity = basler_tof_cam_grab.grab_one_intensity()
-    img, _ = basler_tof_cam_grab.undistort_tof_intensity(intensity)
-    cv2.imshow('img', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
+    pcl = basler_tof_cam_grab.grab_one_point_cloud()
+    print(pcl[:,:,2].max())
+    print(pcl[:,:,2].min())
+    raw_depth = basler_tof_cam_grab.pcl_to_rawdepth(pcl)
+    print(raw_depth.max(), raw_depth.min())
 
