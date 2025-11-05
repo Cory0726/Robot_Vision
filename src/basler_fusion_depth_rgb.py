@@ -44,7 +44,7 @@ def load_cam_calibration_file():
 
     return Kc, dc, Kd, dd, R, T
 
-def project_points_to_color(pcl, color_img, interp="nearest"):
+def warp_point_with_color(pcl, color_img, interp="nearest"):
     """
     Project organized 3D points (depth frame) into the color camera and sample color.
 
@@ -128,29 +128,30 @@ def main():
     color_img = basler_rgb_cam_grab.grab_one_rgb_img()
     pcl = basler_tof_cam_grab.grab_one_point_cloud()
     # Project organized 3D points into color and sample the RGB on the depth grid
-    aligned_rgb, valid_mask = project_points_to_color(pcl, color_img, interp="nearest")  # (Hd,Wd,3), (Hd,Wd)
+    aligned_rgb, valid_mask = warp_point_with_color(pcl, color_img, interp="nearest")  # (Hd,Wd,3), (Hd,Wd)
 
     # Produce aligned uint16 depth in millimeters
-    aligned_depth_mm = basler_tof_cam_grab.pcl_to_rawdepth(pcl)
+    raw_depth = basler_tof_cam_grab.pcl_to_rawdepth(pcl)
 
     # 7) Optional: visualization
-    depth_vis = cv2.applyColorMap(
-        cv2.convertScaleAbs(aligned_depth_mm, alpha=1.0/16.0),  # quick stretch for viewing
-        cv2.COLORMAP_TURBO
-    )
-    overlay = cv2.addWeighted(aligned_rgb, 0.6, depth_vis, 0.4, 0)
+    # depth_vis = cv2.applyColorMap(
+    #     cv2.convertScaleAbs(raw_depth, alpha=1.0/16.0),  # quick stretch for viewing
+    #     cv2.COLORMAP_TURBO
+    # )
+    depth_heatmap = basler_tof_cam_grab.rawdepth_to_heatmap(raw_depth)
+    overlay = cv2.addWeighted(aligned_rgb, 0.6, depth_heatmap, 0.4, 0)
 
     cv2.imshow("Aligned RGB (depth grid)", aligned_rgb)
-    cv2.imshow("Aligned Depth colormap (depth grid)", depth_vis)
+    cv2.imshow("Aligned Depth colormap (depth grid)", depth_heatmap)
     cv2.imshow("Overlay", overlay)
     cv2.waitKey(0)
 
     # 8) Save outputs if you want
     cv2.imwrite("aligned_rgb.png", aligned_rgb)
-    cv2.imwrite("aligned_depth_mm.png", aligned_depth_mm)   # 16-bit PNG
+    cv2.imwrite("raw_depth.png", raw_depth)   # 16-bit PNG
     cv2.imwrite("overlay.png", overlay)
 
-    print("Done. aligned_rgb.png / aligned_depth_mm.png saved.")
+    print("Done. aligned_rgb.png / raw_depth.png saved.")
 
 if __name__ == "__main__":
     main()
