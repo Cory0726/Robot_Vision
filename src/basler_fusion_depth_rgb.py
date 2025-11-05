@@ -132,11 +132,81 @@ def transform_pcl_to_color_frame(pcl):
         T:      (3,1) translation, color <- depth, **millimeters**
 
     Returns:
-        pcl_color_mm: (Hd, Wd, 3) float32, XYZ in color frame, **millimeters**
+        pcl_on_color_frame: (Hd, Wd, 3) float32, XYZ in color frame, **millimeters**
     """
     # Load calibration parameter
     Kc, dc, Kd, dd, R, T = load_cam_calibration_file()
     Hd, Wd, _ = pcl.shape
     pts = pcl.reshape(-1, 3).astype(np.float32)
     Xc = (pts @ R.T) + T.ravel()
-    return Xc.reshape(Hd, Wd, 3).astype(np.float32)
+    return Xc.reshape(Hd, Wd, 3).astype(np.float32)  # pcl_on_color_frame
+
+# ---------- Project Depth Points + Z-buffer Rasterization ----------
+def project_depth_to_color_frame(pcl, color_img):
+    """
+    Directly project the depth camera point cloud (in mm) into the color camera frame,
+    and rasterize it into a Z-buffer depth map at the color image resolution.
+
+    Args:
+        pcl    : (Hd, Wd, 3) float32
+                    3D points (X, Y, Z) in the depth camera frame [millimeters]
+        Kc, dc    : color camera intrinsics and distortion coefficients
+        R, T      : extrinsic parameters (color <- depth)
+                    R: 3x3 rotation matrix
+                    T: 3x1 translation vector [millimeters]
+        color_img : The color image (output depth map size)
+
+    Returns:
+        depth_rgb : (Hc, Wc) uint16
+                       dense Z-buffer depth map [millimeters], aligned to color frame
+        valid_mask   : (Hc, Wc) bool
+                       True for pixels where at least one 3D point projects to it
+    """
+
+    # Load calibration parameter
+    Kc, dc, Kd, dd, R, T = load_cam_calibration_file()
+
+    # Prepare and flatten input points
+    Hc, Wc = color_img.shape
+    Hd, Wd, _ = pcl.shape
+    pts_d = pcl.reshape(-1, 3).astype(np.float32)  # (N,3), in mm
+
+    # Project all 3D depth points directly into the color image plane
+    # cv2.projectPoints applies: [u, v] = Kc * (R * Xd + T) / Z
+    # It handles both rotation/translation (extrinsics) and lens distortion (dc)
+    img_pts, _ = cv2.projectPoints(pts_d, R, T, Kc, dc)  # → (N,1,2)
+    img_pts = img_pts.reshape(-1, 2)
+
+    # Round to nearest integer pixel coordinates
+    u = np.rint(img_pts[:, 0]).astype(np.int32)
+    v = np.rint(img_pts[:, 1]).astype(np.int32)
+    Z = pts_d[:, 2]  # depth values in mm (from depth camera frame)
+
+    # Keep only valid pixels inside the color image bounds
+    valid = (Z > 0) & (u >= 0) & (u < Wc) & (v >= 0) & (v < Hc)
+    u = u[valid]
+    v = v[valid]
+    Z = Z[valid]
+
+    # Z-buffer rasterization
+    # Initialize the depth map with infinity (meaning "no point yet")
+    depth = np.full((Hc, Wc), np.inf, dtype=np.float32)
+
+    # For each projected pixel (v, u), keep the smallest Z (closest point)
+    # np.minimum.at is an in-place vectorized version of:
+    #   for i in range(len(Z)):
+    #       depth[v[i], u[i]] = min(depth[v[i], u[i]], Z[i])
+    np.minimum.at(depth, (v, u), Z)
+
+    # Pixels that received at least one point will have finite values
+    hit = np.isfinite(depth)
+
+    # Convert to 16-bit depth map (mm)
+    # Replace infinity with zeros and clip the valid range to [0, 65535]
+    raw_depth = np.zeros_like(depth, dtype=np.uint16)
+    if hit.any():
+        np.clip(depth, 0, 65535, out=depth)
+        raw_depth[hit] = depth[hit].astype(np.uint16)
+
+    return raw_depth, hit  # (depth_rgb, valid_mask)
+
